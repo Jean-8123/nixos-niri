@@ -32,13 +32,15 @@
     fd
     unzip
     lazygit
-    
+
     # Wayland/niri
     swaylock
     swayidle
     swww
     waypaper
-    
+    mako
+    udiskie
+
     # Entwicklung
     nodejs
     gcc

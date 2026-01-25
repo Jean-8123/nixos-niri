@@ -82,6 +82,17 @@
       };
       sizes.terminal = 12;
     };
+    opacity = {
+      terminal = 0.9;      # Terminals (Alacritty, Kitty, Foot, etc.)
+      applications = 0.95; # Normale Anwendungen (z.B. Brave)
+      desktop = 0.85;      # Desktop-Elemente (Waybar, etc.)
+      popups = 1.0;        # Popups/Tooltips
+    };
+    cursor = {
+      name = "catppuccin-mocha-dark-cursors";
+      package = pkgs.catppuccin-cursors.mochaDark;
+      size = 16;
+    };
   };
 
   system.stateVersion = "25.11";
