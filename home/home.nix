@@ -38,10 +38,9 @@
     swayidle
     swww
     waypaper
-    mako
-    udiskie
+    wlogout
 
-    # Entwicklung
+# Entwicklung
     nodejs
     gcc
     
@@ -71,11 +70,15 @@
       mainBar = {
         layer = "top";
         position = "top";
-        height = 30;
-
+        height = 36;
+        
+        margin-top = 0;
+        margin-left = 0;
+        margin-right = 0;
+        
         modules-left = [ "niri/workspaces" ];
         modules-center = [ "clock" ];
-        modules-right = [ "pulseaudio" "network" "battery" ];
+        modules-right = [ "pulseaudio" "network" "battery" "power-profiles-daemon" "custom/power" ];
 
         clock = {
           format = "{:%H:%M}";
@@ -103,6 +106,23 @@
             default = [ "󰕿" "󰖀" "󰕾" ];
           };
           on-click = "pavucontrol";
+        };
+
+        power-profiles-daemon = {
+          format = "{icon}";
+          tooltip-format = "Power profile: {profile}\nDriver: {driver}";
+          tooltip = true;
+          format-icons = {
+            default = "⚡";      # ASCII statt Nerd Font Icons zum Testen
+            performance = "🚀";
+            balanced = "⚖️";
+            power-saver = "🔋";
+          };
+        };
+        "custom/power" = {
+          format = "⏻";
+          tooltip = false;
+          on-click = "wlogout -b 2";
         };
       };
     };

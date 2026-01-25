@@ -35,6 +35,7 @@
     layout = "de";
     variant = "";
   };
+  services.power-profiles-daemon.enable = true; 
   console.keyMap = "de";
 
   # Benutzer
