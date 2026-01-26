@@ -9,6 +9,11 @@
   # Netzwerk
   networking.networkmanager.enable = true;
   networking.firewall.enable = false;
+  
+  #SSH
+  services.openssh.enable = true;
+  services.openssh.permitRootLogin = "no";
+  services.fail2ban.enable = true;
 
   # Zeit & Sprache
   time.timeZone = "Europe/Berlin";
