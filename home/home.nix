@@ -1,9 +1,7 @@
 { config, pkgs, ... }:
 
 {
-  {
-      xdg.configFile."niri/config.kdl".source = ./niri-config.kdl;
-  }
+  xdg.configFile."niri/config.kdl".source = ./niri-config.kdl;
 
   home.username = "jean";
   home.homeDirectory = "/home/jean";
