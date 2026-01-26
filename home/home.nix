@@ -1,9 +1,9 @@
 { config, pkgs, ... }:
 
 {
-  imports = [
-    ./niri.nix
-  ];
+  {
+      xdg.configFile."niri/config.kdl".source = ./niri-config.kdl;
+  }
 
   home.username = "jean";
   home.homeDirectory = "/home/jean";
@@ -39,8 +39,12 @@
     swww
     waypaper
     wlogout
+    mako
+    xdg-desktop-portal-gtk
+    xdg-desktop-portal-gnome
+    udiskie
 
-# Entwicklung
+    # Entwicklung
     nodejs
     gcc
     

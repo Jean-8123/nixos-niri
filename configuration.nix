@@ -1,17 +1,12 @@
 { config, pkgs, ... }:
 
 {
-  imports = [
-    ./hardware-configuration.nix
-    ./modules/nvidia.nix
-  ];
 
   # Bootloader
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
   # Netzwerk
-  networking.hostName = "LT-nixos";
   networking.networkmanager.enable = true;
   networking.firewall.enable = false;
 

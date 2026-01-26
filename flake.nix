@@ -20,7 +20,14 @@
       system = "x86_64-linux";
       modules = [
         ./configuration.nix
+        ./hosts/LT-hardware.nix
+        ./modules/nvidia.nix
+        
         stylix.nixosModules.stylix
+        
+        {
+          networking.hostName = "LT-nixos";
+        }
         
         home-manager.nixosModules.home-manager
         {
