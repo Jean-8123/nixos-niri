@@ -1,12 +1,18 @@
-{ config, pkgs, ... }: {
-  services.xserver.videoDrivers = ["nvidia"];
-  hardware.graphics.enable = true;
-  hardware.nvidia = {
-      modesetting.enable = true;
-      powerManagement.enable = true;
-      open = false;
-      nvidiaSettings = true;
-    };
+{ config, pkgs, ... }:
 
-  }
+{
+  # ==========================================================================
+  # NVIDIA Grafiktreiber Konfiguration
+  # ==========================================================================
+  services.xserver.videoDrivers = [ "nvidia" ];
+
+  hardware.graphics.enable = true;
+
+  hardware.nvidia = {
+    modesetting.enable      = true;
+    powerManagement.enable  = true;
+    open                    = false;  # Proprietärer Treiber (nicht open-source)
+    nvidiaSettings          = true;   # nvidia-settings GUI aktivieren
+  };
+}
 

@@ -1,27 +1,37 @@
 { config, pkgs, ... }:
 
 {
-  xdg.configFile."niri/config.kdl".source = ./niri-config.kdl;
-
-  home.username = "jean";
+  # ==========================================================================
+  # Home-Manager Grundeinstellungen
+  # ==========================================================================
+  home.username      = "jean";
   home.homeDirectory = "/home/jean";
-  home.stateVersion = "25.05";
+  home.stateVersion  = "25.05";
 
   programs.home-manager.enable = true;
 
+  # ==========================================================================
+  # XDG Konfiguration (Niri Window Manager)
+  # ==========================================================================
+  xdg.configFile."niri/config.kdl".source = ./niri-config.kdl;
+
+  # ==========================================================================
   # Session-Variablen
+  # ==========================================================================
   home.sessionVariables = {
     NIXOS_OZONE_WL = "1";
-    GTK_THEME = "Adwaita:dark";
-    TERMINAL = "kitty";
+    GTK_THEME      = "Adwaita:dark";
+    TERMINAL       = "kitty";
   };
 
+  # ==========================================================================
   # User-Pakete
+  # ==========================================================================
   home.packages = with pkgs; [
     # Browser
     (brave.override { commandLineArgs = "--ozone-platform=wayland"; })
-    
-    # Terminal & Tools
+
+    # Terminal & CLI Tools
     kitty
     alacritty
     fastfetch
@@ -31,7 +41,7 @@
     unzip
     lazygit
 
-    # Wayland/niri
+    # Wayland/Niri Utilities
     swaylock
     swayidle
     swww
@@ -45,7 +55,7 @@
     # Entwicklung
     nodejs
     gcc
-    
+
     # Apps
     localsend
     pavucontrol
@@ -54,55 +64,80 @@
     protonvpn-gui
     krita
     aseprite
-    
+
     # Gaming
     heroic
     lutris-unwrapped
   ];
 
-  # Kitty
+  # ==========================================================================
+  # Terminal: Kitty
+  # ==========================================================================
   programs.kitty = {
     enable = true;
   };
 
-  # Waybar (nur EINMAL!)
+  # ==========================================================================
+  # Waybar (Status-Leiste)
+  # ==========================================================================
   programs.waybar = {
     enable = true;
+
+    # CSS für Modul-Spacing (ergänzt Stylix)
+    style = ''
+      #custom-power {
+        margin-left: 8px;
+        padding-left: 12px;
+        padding-right: 12px;
+      }
+
+      #power-profiles-daemon {
+        padding-left: 8px;
+        padding-right: 8px;
+      }
+
+      /* Allgemeines Spacing für rechte Module */
+      .modules-right > widget > * {
+        margin: 0 4px;
+      }
+    '';
+
     settings = {
       mainBar = {
-        layer = "top";
+        layer    = "top";
         position = "top";
-        height = 36;
-        
-        margin-top = 0;
-        margin-left = 0;
+        height   = 36;
+        spacing  = 8;  # Globaler Abstand zwischen Modulen (in px)
+
+        margin-top   = 0;
+        margin-left  = 0;
         margin-right = 0;
-        
-        modules-left = [ "niri/workspaces" ];
+
+        modules-left   = [ "niri/workspaces" ];
         modules-center = [ "clock" ];
-        modules-right = [ "pulseaudio" "network" "battery" "power-profiles-daemon" "custom/power" ];
+        modules-right  = [ "pulseaudio" "network" "battery" "power-profiles-daemon" "custom/power" ];
 
         clock = {
-          format = "{:%H:%M}";
-          format-alt = "{:%A, %d. %B %Y}";
+          format         = "{:%H:%M}";
+          format-alt     = "{:%A, %d. %B %Y}";
           tooltip-format = "<tt>{calendar}</tt>";
         };
 
         battery = {
-          format = "{icon} {capacity}%";
-          format-icons = [ "󰂎" "󰁺" "󰁻" "󰁼" "󰁽" "󰁾" "󰁿" "󰂀" "󰂁" "󰂂" "󰁹" ];
+          format          = "{icon} {capacity}%";
+          format-icons    = [ "󰂎" "󰁺" "󰁻" "󰁼" "󰁽" "󰁾" "󰁿" "󰂀" "󰂁" "󰂂" "󰁹" ];
           format-charging = "󰂄 {capacity}%";
         };
 
         network = {
-          format-wifi = "󰖩 {essid}";
-          format-ethernet = "󰈀 {ipaddr}";
+          format-wifi         = "󰖩 {essid}";
+          format-ethernet     = "󰈀 {ipaddr}";
           format-disconnected = "󰖪";
-          tooltip-format = "{ifname}: {ipaddr}";
+          tooltip-format      = "{ifname}: {ipaddr}";
         };
 
         pulseaudio = {
-          format = "{icon} {volume}%";
+          format       = "{icon} {volume}%";
           format-muted = "󰝟";
           format-icons = {
             default = [ "󰕿" "󰖀" "󰕾" ];
@@ -111,28 +146,31 @@
         };
 
         power-profiles-daemon = {
-          format = "{icon}";
+          format         = "{icon}";
           tooltip-format = "Power profile: {profile}\nDriver: {driver}";
-          tooltip = true;
-          format-icons = {
-            default = "⚡";      # ASCII statt Nerd Font Icons zum Testen
+          tooltip        = true;
+          format-icons   = {
+            default     = "⚡";
             performance = "🚀";
-            balanced = "⚖️";
+            balanced    = "⚖️";
             power-saver = "🔋";
           };
         };
+
         "custom/power" = {
-          format = "⏻";
-          tooltip = false;
+          format   = "⏻";
+          tooltip  = false;
           on-click = "wlogout -b 2";
         };
       };
     };
   };
 
-  # Fuzzel
+  # ==========================================================================
+  # Fuzzel (App-Launcher)
+  # ==========================================================================
   programs.fuzzel = {
-    enable = true;
+    enable   = true;
     settings = {
       main = {
         terminal = "kitty";
