@@ -48,6 +48,33 @@
         }
       ];
     };
+
+    nixosConfigurations.zLT-nixos = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+
+      modules = [
+        # System-Konfiguration
+        ./configuration.nix
+        ./hosts/zLT-hardware.nix
+        ./modules/nvidia.nix
+        #./modules/gaming.nix
+
+        # Stylix Theming
+        stylix.nixosModules.stylix
+
+        # Host-spezifische Einstellungen
+        { networking.hostName = "zLT-nixos"; }
+
+        # Home-Manager Integration
+        home-manager.nixosModules.home-manager
+        {
+          home-manager.useGlobalPkgs        = true;
+          home-manager.useUserPackages      = true;
+          home-manager.users.jean           = import ./home/home.nix;
+          home-manager.backupFileExtension  = "backup";
+        }
+      ];
+    };
   };
 }
 
