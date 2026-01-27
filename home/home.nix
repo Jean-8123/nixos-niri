@@ -64,6 +64,7 @@
     protonvpn-gui
     krita
     aseprite
+    discord
 
   ];
 
