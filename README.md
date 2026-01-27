@@ -11,7 +11,8 @@ nixos-niri/
 ├── hosts/
 │   └── LT-hardware.nix    # Hardware-spezifische Konfiguration (Laptop)
 ├── modules/
-│   └── nvidia.nix         # NVIDIA Grafiktreiber Modul
+│   ├── nvidia.nix         # NVIDIA Grafiktreiber Modul
+│   └── gaming.nix         # Gaming (Steam, Heroic, Lutris, etc.)
 ├── home/
 │   ├── home.nix           # Home-Manager Konfiguration (User-spezifisch)
 │   └── niri-config.kdl    # Niri Window Manager Konfiguration
@@ -51,9 +52,10 @@ Die zentrale System-Konfiguration. Hier wird alles definiert, was **root-Rechte*
 | **Nix** | Flakes und nix-command aktiviert, unfree erlaubt |
 
 **System-Programme:**
+
 - `niri` - Wayland Tiling Compositor
-- `steam` - Gaming Platform
 - `git`, `neovim`, `xwayland-satellite`
+- Bluetooth (blueman) aktiviert
 
 **Stylix Theming:**
 - Theme: Catppuccin Mocha
@@ -88,6 +90,21 @@ NVIDIA Grafiktreiber-Konfiguration:
 
 ---
 
+### `modules/gaming.nix`
+
+Gaming-Konfiguration mit Steam und weiteren Tools:
+
+| Komponente | Beschreibung |
+| ---------- | ------------ |
+| **Steam** | Mit Remote Play und Dedicated Server Ports |
+| **GameMode** | Automatische Performance-Optimierung |
+| **Heroic** | Epic Games, GOG, Amazon Games Launcher |
+| **Lutris** | Wine Gaming Platform |
+| **MangoHud** | FPS Overlay & Performance Monitoring |
+| **ProtonUp-Qt** | Proton/Wine Version Manager |
+
+---
+
 ### `home/home.nix`
 
 Home-Manager Konfiguration für User `jean`. Hier wird alles definiert, was **keine root-Rechte** braucht.
@@ -109,12 +126,11 @@ TERMINAL = "kitty"
 | **Wayland** | swaylock, swayidle, swww, waypaper, wlogout, mako, udiskie |
 | **Entwicklung** | nodejs, gcc |
 | **Apps** | localsend, pavucontrol, networkmanagerapplet, qbittorrent, protonvpn-gui, krita, aseprite |
-| **Gaming** | heroic, lutris |
 
 **Konfigurierte Programme:**
 
 - **Kitty** - GPU-beschleunigtes Terminal
-- **Waybar** - Status-Leiste mit Workspaces, Uhr, Batterie, Netzwerk, Audio, Power
+- **Waybar** - Status-Leiste mit Workspaces, Uhr, Bluetooth, Batterie, Netzwerk, Audio, Power
 - **Fuzzel** - Wayland App-Launcher
 
 ---
@@ -203,3 +219,110 @@ stylix = {
 ```
 
 Verfügbare Themes: [base16-schemes](https://github.com/tinted-theming/base16-schemes)
+
+---
+
+## Neues Gerät onboarden (Schritt für Schritt)
+
+### 1. NixOS auf dem neuen Gerät installieren
+
+```bash
+# NixOS ISO booten und Partitionen erstellen
+# Dann NixOS minimal installieren:
+sudo nixos-install
+```
+
+### 2. Repository klonen
+
+```bash
+# Nach dem ersten Boot ins neue System:
+nix-shell -p git
+
+# Repository klonen
+git clone https://github.com/DEIN_USER/nixos-niri.git ~/nixos-config
+cd ~/nixos-config
+```
+
+### 3. Hardware-Konfiguration generieren
+
+```bash
+# Generiert hardware-configuration.nix für das neue Gerät
+sudo nixos-generate-config --show-hardware-config > hosts/NEUER-HOST-hardware.nix
+```
+
+### 4. Host in `flake.nix` hinzufügen
+
+Füge eine neue `nixosConfigurations` hinzu:
+
+```nix
+nixosConfigurations.NEUER-HOST = nixpkgs.lib.nixosSystem {
+  system = "x86_64-linux";  # oder "aarch64-linux" für ARM
+
+  modules = [
+    ./configuration.nix
+    ./hosts/NEUER-HOST-hardware.nix
+
+    # Module nach Bedarf hinzufügen/entfernen:
+    # ./modules/nvidia.nix      # Nur bei NVIDIA GPU
+    ./modules/gaming.nix        # Gaming-Pakete
+
+    stylix.nixosModules.stylix
+
+    { networking.hostName = "NEUER-HOST"; }
+
+    home-manager.nixosModules.home-manager
+    {
+      home-manager.useGlobalPkgs       = true;
+      home-manager.useUserPackages     = true;
+      home-manager.users.jean          = import ./home/home.nix;
+      home-manager.backupFileExtension = "backup";
+    }
+  ];
+};
+```
+
+### 5. Hardware-spezifische Anpassungen
+
+Je nach Hardware musst du Module anpassen:
+
+| Hardware | Aktion |
+| -------- | ------ |
+| **NVIDIA GPU** | `./modules/nvidia.nix` hinzufügen |
+| **AMD GPU** | Neues `modules/amd.nix` erstellen oder weglassen (mesa default) |
+| **Intel GPU** | Kein extra Modul nötig |
+| **Laptop** | Batterie/Power-Management ist bereits in `configuration.nix` |
+| **Desktop** | Batterie-Modul in Waybar ggf. entfernen |
+
+### 6. System bauen und aktivieren
+
+```bash
+# Ins Konfigurationsverzeichnis wechseln
+cd ~/nixos-config
+
+# System bauen (ersetze NEUER-HOST mit deinem Hostnamen)
+sudo nixos-rebuild switch --flake .#NEUER-HOST
+```
+
+### 7. Neustart und Verifizierung
+
+```bash
+# System neu starten
+sudo reboot
+
+# Nach dem Reboot prüfen:
+# - Niri startet automatisch
+# - Waybar zeigt alle Module
+# - Bluetooth/WiFi funktioniert
+# - Gaming-Pakete sind installiert (falls gaming.nix aktiviert)
+```
+
+### Checkliste für neues Gerät
+
+- [ ] Hardware-Konfiguration generiert (`hosts/HOSTNAME-hardware.nix`)
+- [ ] Host in `flake.nix` hinzugefügt
+- [ ] GPU-Modul korrekt (nvidia/amd/intel)
+- [ ] `nixos-rebuild switch` erfolgreich
+- [ ] Niri/Waybar funktioniert
+- [ ] Bluetooth verbindet Geräte
+- [ ] Audio funktioniert (PipeWire)
+- [ ] Änderungen committed und gepusht
