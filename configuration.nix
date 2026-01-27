@@ -52,6 +52,13 @@
   services.power-profiles-daemon.enable = true;
 
   # ==========================================================================
+  # Bluetooth
+  # ==========================================================================
+  hardware.bluetooth.enable      = true;
+  hardware.bluetooth.powerOnBoot = true;
+  services.blueman.enable        = true;
+
+  # ==========================================================================
   # Benutzer
   # ==========================================================================
   users.users.jean = {
@@ -70,7 +77,6 @@
   # System-Programme
   # ==========================================================================
   programs.niri.enable = true;
-  programs.steam.enable = true;
 
   environment.systemPackages = with pkgs; [
     git

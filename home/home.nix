@@ -65,9 +65,6 @@
     krita
     aseprite
 
-    # Gaming
-    heroic
-    lutris-unwrapped
   ];
 
   # ==========================================================================
@@ -115,7 +112,7 @@
 
         modules-left   = [ "niri/workspaces" ];
         modules-center = [ "clock" ];
-        modules-right  = [ "pulseaudio" "network" "battery" "power-profiles-daemon" "custom/power" ];
+        modules-right  = [ "pulseaudio" "network" "bluetooth" "battery" "power-profiles-daemon" "custom/power" ];
 
         clock = {
           format         = "{:%H:%M}";
@@ -134,6 +131,14 @@
           format-ethernet     = "󰈀 {ipaddr}";
           format-disconnected = "󰖪";
           tooltip-format      = "{ifname}: {ipaddr}";
+        };
+
+        bluetooth = {
+          format           = "󰂯";
+          format-connected = "󰂱 {device_alias}";
+          format-off       = "󰂲";
+          tooltip-format   = "{controller_alias}\n{num_connections} verbunden";
+          on-click         = "blueman-manager";
         };
 
         pulseaudio = {

@@ -30,6 +30,7 @@
         ./configuration.nix
         ./hosts/LT-hardware.nix
         ./modules/nvidia.nix
+        ./modules/gaming.nix
 
         # Stylix Theming
         stylix.nixosModules.stylix
