@@ -21,7 +21,8 @@
     # Game Launcher
     heroic               # Epic Games, GOG, Amazon Games
     lutris-unwrapped     # Wine Gaming Platform
-
+    qbittorrent
+    protonvpn-gui
     # Tools
     mangohud             # FPS Overlay & Performance Monitoring
     protonup-qt          # Proton/Wine Version Manager

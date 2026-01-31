@@ -55,17 +55,18 @@
     # Entwicklung
     nodejs
     gcc
+    go
+    python315
 
     # Apps
     localsend
     pavucontrol
     networkmanagerapplet
-    qbittorrent
-    protonvpn-gui
     krita
     aseprite
     discord
-
+    spotify
+    xxd
   ];
 
   # ==========================================================================
