@@ -444,6 +444,9 @@
   # ==========================================================================
   # Swaylock (Lockscreen - Noctalia Theme)
   # ==========================================================================
+  # Stylix für swaylock deaktivieren (wir verwenden eigenes Theme)
+  stylix.targets.swaylock.enable = false;
+
   programs.swaylock = {
     enable = true;
     settings = {
