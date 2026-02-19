@@ -183,6 +183,7 @@
     localsend
     pavucontrol
     networkmanagerapplet
+    impala  # TUI WiFi Manager
     krita
     aseprite
     discord
@@ -414,6 +415,7 @@
           format-ethernet     = "󰈀 {ipaddr}";
           format-disconnected = "󰖪";
           tooltip-format      = "{ifname}: {ipaddr}";
+          on-click            = "kitty --title 'WiFi Manager' impala";
         };
 
         bluetooth = {
@@ -448,7 +450,7 @@
         "custom/power" = {
           format   = "⏻";
           tooltip  = false;
-          on-click = "wlogout -b 2";
+          on-click = "wlogout -b 5 -T 400 -B 400 --protocol layer-shell";
         };
       };
     };
