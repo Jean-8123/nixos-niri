@@ -22,104 +22,109 @@
     {
         "label" : "lock",
         "action" : "swaylock",
-        "text" : "Lock",
+        "text" : "",
         "keybind" : "l"
     }
     {
         "label" : "logout",
         "action" : "niri msg action quit",
-        "text" : "Logout",
+        "text" : "󰍃",
         "keybind" : "e"
     }
     {
         "label" : "suspend",
         "action" : "systemctl suspend",
-        "text" : "Suspend",
+        "text" : "󰤄",
         "keybind" : "u"
     }
     {
         "label" : "reboot",
         "action" : "systemctl reboot",
-        "text" : "Reboot",
+        "text" : "",
         "keybind" : "r"
     }
     {
         "label" : "shutdown",
         "action" : "systemctl poweroff",
-        "text" : "Shutdown",
+        "text" : "",
         "keybind" : "s"
     }
   '';
 
   xdg.configFile."wlogout/style.css".text = ''
     /* ═══════════════════════════════════════════════════════════════════
-     * Wlogout - Noctalia Minimal Theme
+     * Wlogout - Noctalia Minimal Theme (Nerd Font Icons)
      * ═══════════════════════════════════════════════════════════════════ */
 
+    * {
+      font-family: "JetBrainsMono Nerd Font", monospace;
+      font-size: 48px;
+    }
+
     window {
-      background-color: rgba(12, 12, 12, 0.9);
+      background-color: rgba(12, 12, 12, 0.85);
     }
 
     button {
       color: #c0caf5;
       background-color: rgba(20, 20, 20, 0.8);
-      border: 2px solid rgba(255, 255, 255, 0.05);
-      border-radius: 12px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-      margin: 10px;
-      background-repeat: no-repeat;
-      background-position: center;
-      background-size: 25%;
+      border: 2px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      margin: 12px;
       transition: all 0.2s ease-in-out;
     }
 
     button:focus,
     button:active,
     button:hover {
-      background-color: rgba(30, 30, 30, 0.9);
+      background-color: rgba(30, 30, 30, 0.95);
       outline-style: none;
-      border-color: #bb9af7;
-      box-shadow: 0 0 20px 2px rgba(187, 154, 247, 0.4);
     }
 
     #lock {
-      border-color: #f7768e;
+      color: #f7768e;
+      border-color: rgba(247, 118, 142, 0.3);
     }
     #lock:hover {
       border-color: #f7768e;
-      box-shadow: 0 0 20px 2px rgba(247, 118, 142, 0.4);
+      box-shadow: 0 0 24px 4px rgba(247, 118, 142, 0.35);
     }
 
     #logout {
-      border-color: #ff9e64;
+      color: #ff9e64;
+      border-color: rgba(255, 158, 100, 0.3);
     }
     #logout:hover {
       border-color: #ff9e64;
-      box-shadow: 0 0 20px 2px rgba(255, 158, 100, 0.4);
+      box-shadow: 0 0 24px 4px rgba(255, 158, 100, 0.35);
     }
 
     #suspend {
-      border-color: #e0af68;
+      color: #e0af68;
+      border-color: rgba(224, 175, 104, 0.3);
     }
     #suspend:hover {
       border-color: #e0af68;
-      box-shadow: 0 0 20px 2px rgba(224, 175, 104, 0.4);
+      box-shadow: 0 0 24px 4px rgba(224, 175, 104, 0.35);
     }
 
     #reboot {
-      border-color: #bb9af7;
+      color: #bb9af7;
+      border-color: rgba(187, 154, 247, 0.3);
     }
     #reboot:hover {
       border-color: #bb9af7;
-      box-shadow: 0 0 20px 2px rgba(187, 154, 247, 0.4);
+      box-shadow: 0 0 24px 4px rgba(187, 154, 247, 0.35);
     }
 
     #shutdown {
-      border-color: #7dcfff;
+      color: #7dcfff;
+      border-color: rgba(125, 207, 255, 0.3);
     }
     #shutdown:hover {
       border-color: #7dcfff;
-      box-shadow: 0 0 20px 2px rgba(125, 207, 255, 0.4);
+      box-shadow: 0 0 24px 4px rgba(125, 207, 255, 0.35);
     }
   '';
 
@@ -442,20 +447,29 @@
   };
 
   # ==========================================================================
-  # Swaylock (Lockscreen - Noctalia Theme)
+  # Swaylock-Effects (Lockscreen mit Blur - Noctalia Theme)
   # ==========================================================================
   # Stylix für swaylock deaktivieren (wir verwenden eigenes Theme)
   stylix.targets.swaylock.enable = false;
 
   programs.swaylock = {
-    enable = true;
+    enable  = true;
+    package = pkgs.swaylock-effects;
     settings = {
+      # Screenshots mit Effekten (wie Omarchy/hyprlock)
+      screenshots         = true;
+      clock               = true;
+      indicator           = true;
+      effect-blur         = "10x3";
+      effect-vignette     = "0.3:0.8";
+      fade-in             = 0.2;
+      grace               = 2;
+
       # Farben (Noctalia Theme)
-      color              = "0c0c0c";
-      inside-color       = "1a1b26";
-      inside-clear-color = "1a1b26";
-      inside-ver-color   = "1a1b26";
-      inside-wrong-color = "1a1b26";
+      inside-color       = "1a1b2600";
+      inside-clear-color = "1a1b2600";
+      inside-ver-color   = "1a1b2600";
+      inside-wrong-color = "1a1b2600";
 
       line-color       = "00000000";
       line-clear-color = "00000000";
@@ -472,22 +486,28 @@
 
       text-color       = "c0caf5";
       text-clear-color = "c0caf5";
-      text-ver-color   = "c0caf5";
+      text-ver-color   = "7dcfff";
       text-wrong-color = "f7768e";
 
       separator-color = "00000000";
 
       # Indikator
-      indicator-radius    = 100;
-      indicator-thickness = 10;
+      indicator-radius    = 120;
+      indicator-thickness = 8;
 
-      # Verhalten
-      show-failed-attempts = true;
-      ignore-empty-password = true;
+      # Clock
+      clock               = true;
+      timestr             = "%H:%M";
+      datestr             = "%A, %d. %B";
 
       # Font
       font      = "JetBrainsMono Nerd Font";
-      font-size = 24;
+      font-size = 32;
+
+      # Verhalten
+      show-failed-attempts  = true;
+      ignore-empty-password = true;
+      daemonize             = true;
     };
   };
 
