@@ -495,8 +495,7 @@
       indicator-radius    = 120;
       indicator-thickness = 8;
 
-      # Clock
-      clock               = true;
+      # Clock Format
       timestr             = "%H:%M";
       datestr             = "%A, %d. %B";
 
