@@ -16,14 +16,32 @@
   xdg.configFile."niri/config.kdl".source = ./niri-config.kdl;
 
   # ==========================================================================
-  # Wlogout Konfiguration (Noctalia Theme mit System-Icons)
+  # Wlogout Konfiguration (HyprNova Style für Niri)
   # ==========================================================================
+  # Icons kopieren
+  xdg.configFile."wlogout/icons/power.png".source        = ../assets/wlogout-icons/power.png;
+  xdg.configFile."wlogout/icons/power-hover.png".source  = ../assets/wlogout-icons/power-hover.png;
+  xdg.configFile."wlogout/icons/restart.png".source      = ../assets/wlogout-icons/restart.png;
+  xdg.configFile."wlogout/icons/restart-hover.png".source = ../assets/wlogout-icons/restart-hover.png;
+  xdg.configFile."wlogout/icons/logout.png".source       = ../assets/wlogout-icons/logout.png;
+  xdg.configFile."wlogout/icons/logout-hover.png".source = ../assets/wlogout-icons/logout-hover.png;
+  xdg.configFile."wlogout/icons/lock.png".source         = ../assets/wlogout-icons/lock.png;
+  xdg.configFile."wlogout/icons/lock-hover.png".source   = ../assets/wlogout-icons/lock-hover.png;
+  xdg.configFile."wlogout/icons/sleep.png".source        = ../assets/wlogout-icons/sleep.png;
+  xdg.configFile."wlogout/icons/sleep-hover.png".source  = ../assets/wlogout-icons/sleep-hover.png;
+
   xdg.configFile."wlogout/layout".text = ''
     {
-        "label" : "lock",
-        "action" : "swaylock",
-        "text" : "Lock",
-        "keybind" : "l"
+        "label" : "shutdown",
+        "action" : "systemctl poweroff",
+        "text" : "Shutdown",
+        "keybind" : "s"
+    }
+    {
+        "label" : "reboot",
+        "action" : "systemctl reboot",
+        "text" : "Reboot",
+        "keybind" : "r"
     }
     {
         "label" : "logout",
@@ -38,95 +56,83 @@
         "keybind" : "u"
     }
     {
-        "label" : "reboot",
-        "action" : "systemctl reboot",
-        "text" : "Reboot",
-        "keybind" : "r"
-    }
-    {
-        "label" : "shutdown",
-        "action" : "systemctl poweroff",
-        "text" : "Shutdown",
-        "keybind" : "s"
+        "label" : "lock",
+        "action" : "swaylock",
+        "text" : "Lock",
+        "keybind" : "l"
     }
   '';
 
   xdg.configFile."wlogout/style.css".text = ''
     /* ═══════════════════════════════════════════════════════════════════
-     * Wlogout - Noctalia Minimal Theme (System Icons)
+     * Wlogout - HyprNova Style (angepasst für NixOS/Niri)
      * ═══════════════════════════════════════════════════════════════════ */
 
-    * {
-      background-image: none;
-      font-family: "JetBrainsMono Nerd Font", sans-serif;
-    }
-
     window {
-      background-color: rgba(12, 12, 12, 0.9);
+      font-family: "JetBrainsMono Nerd Font", monospace;
+      font-size: 14pt;
+      color: #c0caf5;
+      background-color: rgba(24, 27, 32, 0.85);
     }
 
     button {
-      color: #c0caf5;
-      background-color: rgba(26, 27, 38, 0.9);
-      border: 2px solid rgba(255, 255, 255, 0.1);
-      border-radius: 20px;
-      margin: 10px;
       background-repeat: no-repeat;
       background-position: center;
+      background-size: 20%;
+      background-color: transparent;
+      animation: gradient_f 20s ease-in infinite;
+      transition: all 0.3s ease-in;
+      box-shadow: 0 0 10px 2px transparent;
+      border: none;
+      border-radius: 36px;
+      margin: 10px;
+    }
+
+    button:focus {
+      box-shadow: none;
+      background-size: 20%;
+    }
+
+    button:hover {
       background-size: 35%;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-      transition: all 0.3s ease;
-    }
-
-    button:hover, button:focus {
-      background-color: rgba(40, 42, 54, 0.95);
-      background-size: 40%;
-      outline-style: none;
-    }
-
-    #lock {
-      background-image: image(url("${pkgs.wlogout}/share/wlogout/icons/lock.png"));
-      border-color: rgba(247, 118, 142, 0.4);
-    }
-    #lock:hover {
-      border-color: #f7768e;
-      box-shadow: 0 0 20px rgba(247, 118, 142, 0.4);
-    }
-
-    #logout {
-      background-image: image(url("${pkgs.wlogout}/share/wlogout/icons/logout.png"));
-      border-color: rgba(255, 158, 100, 0.4);
-    }
-    #logout:hover {
-      border-color: #ff9e64;
-      box-shadow: 0 0 20px rgba(255, 158, 100, 0.4);
-    }
-
-    #suspend {
-      background-image: image(url("${pkgs.wlogout}/share/wlogout/icons/suspend.png"));
-      border-color: rgba(224, 175, 104, 0.4);
-    }
-    #suspend:hover {
-      border-color: #e0af68;
-      box-shadow: 0 0 20px rgba(224, 175, 104, 0.4);
-    }
-
-    #reboot {
-      background-image: image(url("${pkgs.wlogout}/share/wlogout/icons/reboot.png"));
-      border-color: rgba(187, 154, 247, 0.4);
-    }
-    #reboot:hover {
-      border-color: #bb9af7;
-      box-shadow: 0 0 20px rgba(187, 154, 247, 0.4);
+      box-shadow: 0 0 10px 3px rgba(0, 0, 0, 0.4);
+      background-color: rgba(187, 154, 247, 0.3);
+      transition: all 0.3s cubic-bezier(.55, 0.0, .28, 1.682), box-shadow 0.5s ease-in;
     }
 
     #shutdown {
-      background-image: image(url("${pkgs.wlogout}/share/wlogout/icons/shutdown.png"));
-      border-color: rgba(125, 207, 255, 0.4);
+      background-image: image(url("./icons/power.png"));
     }
     #shutdown:hover {
-      border-color: #7dcfff;
-      box-shadow: 0 0 20px rgba(125, 207, 255, 0.4);
+      background-image: image(url("./icons/power-hover.png"));
+    }
+
+    #reboot {
+      background-image: image(url("./icons/restart.png"));
+    }
+    #reboot:hover {
+      background-image: image(url("./icons/restart-hover.png"));
+    }
+
+    #logout {
+      background-image: image(url("./icons/logout.png"));
+    }
+    #logout:hover {
+      background-image: image(url("./icons/logout-hover.png"));
+    }
+
+    #suspend {
+      background-image: image(url("./icons/sleep.png"));
+    }
+    #suspend:hover {
+      background-image: image(url("./icons/sleep-hover.png"));
+    }
+
+    #lock {
+      background-image: image(url("./icons/lock.png"));
+    }
+    #lock:hover {
+      background-image: image(url("./icons/lock-hover.png"));
     }
   '';
 
