@@ -20,6 +20,9 @@
   services.openssh.permitRootLogin = "no";
   services.fail2ban.enable = true;
 
+  # PAM für swaylock (erforderlich für Authentifizierung)
+  security.pam.services.swaylock = {};
+
   # ==========================================================================
   # Zeit & Sprache
   # ==========================================================================

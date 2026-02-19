@@ -16,6 +16,114 @@
   xdg.configFile."niri/config.kdl".source = ./niri-config.kdl;
 
   # ==========================================================================
+  # Wlogout Konfiguration (Noctalia Theme)
+  # ==========================================================================
+  xdg.configFile."wlogout/layout".text = ''
+    {
+        "label" : "lock",
+        "action" : "swaylock",
+        "text" : "Lock",
+        "keybind" : "l"
+    }
+    {
+        "label" : "logout",
+        "action" : "niri msg action quit",
+        "text" : "Logout",
+        "keybind" : "e"
+    }
+    {
+        "label" : "suspend",
+        "action" : "systemctl suspend",
+        "text" : "Suspend",
+        "keybind" : "u"
+    }
+    {
+        "label" : "reboot",
+        "action" : "systemctl reboot",
+        "text" : "Reboot",
+        "keybind" : "r"
+    }
+    {
+        "label" : "shutdown",
+        "action" : "systemctl poweroff",
+        "text" : "Shutdown",
+        "keybind" : "s"
+    }
+  '';
+
+  xdg.configFile."wlogout/style.css".text = ''
+    /* ═══════════════════════════════════════════════════════════════════
+     * Wlogout - Noctalia Minimal Theme
+     * ═══════════════════════════════════════════════════════════════════ */
+
+    window {
+      background-color: rgba(12, 12, 12, 0.9);
+    }
+
+    button {
+      color: #c0caf5;
+      background-color: rgba(20, 20, 20, 0.8);
+      border: 2px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      margin: 10px;
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: 25%;
+      transition: all 0.2s ease-in-out;
+    }
+
+    button:focus,
+    button:active,
+    button:hover {
+      background-color: rgba(30, 30, 30, 0.9);
+      outline-style: none;
+      border-color: #bb9af7;
+      box-shadow: 0 0 20px 2px rgba(187, 154, 247, 0.4);
+    }
+
+    #lock {
+      border-color: #f7768e;
+    }
+    #lock:hover {
+      border-color: #f7768e;
+      box-shadow: 0 0 20px 2px rgba(247, 118, 142, 0.4);
+    }
+
+    #logout {
+      border-color: #ff9e64;
+    }
+    #logout:hover {
+      border-color: #ff9e64;
+      box-shadow: 0 0 20px 2px rgba(255, 158, 100, 0.4);
+    }
+
+    #suspend {
+      border-color: #e0af68;
+    }
+    #suspend:hover {
+      border-color: #e0af68;
+      box-shadow: 0 0 20px 2px rgba(224, 175, 104, 0.4);
+    }
+
+    #reboot {
+      border-color: #bb9af7;
+    }
+    #reboot:hover {
+      border-color: #bb9af7;
+      box-shadow: 0 0 20px 2px rgba(187, 154, 247, 0.4);
+    }
+
+    #shutdown {
+      border-color: #7dcfff;
+    }
+    #shutdown:hover {
+      border-color: #7dcfff;
+      box-shadow: 0 0 20px 2px rgba(125, 207, 255, 0.4);
+    }
+  '';
+
+  # ==========================================================================
   # Session-Variablen
   # ==========================================================================
   home.sessionVariables = {
@@ -42,7 +150,7 @@
     lazygit
 
     # Wayland/Niri Utilities
-    swaylock
+    # swaylock wird über programs.swaylock installiert
     swayidle
     swww
     waypaper
@@ -330,6 +438,53 @@
           on-click = "wlogout -b 2";
         };
       };
+    };
+  };
+
+  # ==========================================================================
+  # Swaylock (Lockscreen - Noctalia Theme)
+  # ==========================================================================
+  programs.swaylock = {
+    enable = true;
+    settings = {
+      # Farben (Noctalia Theme)
+      color              = "0c0c0c";
+      inside-color       = "1a1b26";
+      inside-clear-color = "1a1b26";
+      inside-ver-color   = "1a1b26";
+      inside-wrong-color = "1a1b26";
+
+      line-color       = "00000000";
+      line-clear-color = "00000000";
+      line-ver-color   = "00000000";
+      line-wrong-color = "00000000";
+
+      ring-color       = "bb9af7";
+      ring-clear-color = "e0af68";
+      ring-ver-color   = "7dcfff";
+      ring-wrong-color = "f7768e";
+
+      key-hl-color = "bb9af7";
+      bs-hl-color  = "f7768e";
+
+      text-color       = "c0caf5";
+      text-clear-color = "c0caf5";
+      text-ver-color   = "c0caf5";
+      text-wrong-color = "f7768e";
+
+      separator-color = "00000000";
+
+      # Indikator
+      indicator-radius    = 100;
+      indicator-thickness = 10;
+
+      # Verhalten
+      show-failed-attempts = true;
+      ignore-empty-password = true;
+
+      # Font
+      font      = "JetBrainsMono Nerd Font";
+      font-size = 24;
     };
   };
 
