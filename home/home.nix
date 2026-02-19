@@ -16,115 +16,117 @@
   xdg.configFile."niri/config.kdl".source = ./niri-config.kdl;
 
   # ==========================================================================
-  # Wlogout Konfiguration (Noctalia Theme)
+  # Wlogout Konfiguration (Noctalia Theme mit System-Icons)
   # ==========================================================================
   xdg.configFile."wlogout/layout".text = ''
     {
         "label" : "lock",
         "action" : "swaylock",
-        "text" : "",
+        "text" : "Lock",
         "keybind" : "l"
     }
     {
         "label" : "logout",
         "action" : "niri msg action quit",
-        "text" : "󰍃",
+        "text" : "Logout",
         "keybind" : "e"
     }
     {
         "label" : "suspend",
         "action" : "systemctl suspend",
-        "text" : "󰤄",
+        "text" : "Suspend",
         "keybind" : "u"
     }
     {
         "label" : "reboot",
         "action" : "systemctl reboot",
-        "text" : "",
+        "text" : "Reboot",
         "keybind" : "r"
     }
     {
         "label" : "shutdown",
         "action" : "systemctl poweroff",
-        "text" : "",
+        "text" : "Shutdown",
         "keybind" : "s"
     }
   '';
 
   xdg.configFile."wlogout/style.css".text = ''
     /* ═══════════════════════════════════════════════════════════════════
-     * Wlogout - Noctalia Minimal Theme (Nerd Font Icons)
+     * Wlogout - Noctalia Minimal Theme (System Icons)
      * ═══════════════════════════════════════════════════════════════════ */
 
     * {
-      font-family: "JetBrainsMono Nerd Font", monospace;
-      font-size: 48px;
+      background-image: none;
+      font-family: "JetBrainsMono Nerd Font", sans-serif;
     }
 
     window {
-      background-color: rgba(12, 12, 12, 0.85);
+      background-color: rgba(12, 12, 12, 0.9);
     }
 
     button {
       color: #c0caf5;
-      background-color: rgba(20, 20, 20, 0.8);
-      border: 2px solid rgba(255, 255, 255, 0.08);
-      border-radius: 16px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-      margin: 12px;
-      transition: all 0.2s ease-in-out;
+      background-color: rgba(26, 27, 38, 0.9);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      margin: 10px;
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: 35%;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+      transition: all 0.3s ease;
     }
 
-    button:focus,
-    button:active,
-    button:hover {
-      background-color: rgba(30, 30, 30, 0.95);
+    button:hover, button:focus {
+      background-color: rgba(40, 42, 54, 0.95);
+      background-size: 40%;
       outline-style: none;
     }
 
     #lock {
-      color: #f7768e;
-      border-color: rgba(247, 118, 142, 0.3);
+      background-image: image(url("${pkgs.wlogout}/share/wlogout/icons/lock.png"));
+      border-color: rgba(247, 118, 142, 0.4);
     }
     #lock:hover {
       border-color: #f7768e;
-      box-shadow: 0 0 24px 4px rgba(247, 118, 142, 0.35);
+      box-shadow: 0 0 20px rgba(247, 118, 142, 0.4);
     }
 
     #logout {
-      color: #ff9e64;
-      border-color: rgba(255, 158, 100, 0.3);
+      background-image: image(url("${pkgs.wlogout}/share/wlogout/icons/logout.png"));
+      border-color: rgba(255, 158, 100, 0.4);
     }
     #logout:hover {
       border-color: #ff9e64;
-      box-shadow: 0 0 24px 4px rgba(255, 158, 100, 0.35);
+      box-shadow: 0 0 20px rgba(255, 158, 100, 0.4);
     }
 
     #suspend {
-      color: #e0af68;
-      border-color: rgba(224, 175, 104, 0.3);
+      background-image: image(url("${pkgs.wlogout}/share/wlogout/icons/suspend.png"));
+      border-color: rgba(224, 175, 104, 0.4);
     }
     #suspend:hover {
       border-color: #e0af68;
-      box-shadow: 0 0 24px 4px rgba(224, 175, 104, 0.35);
+      box-shadow: 0 0 20px rgba(224, 175, 104, 0.4);
     }
 
     #reboot {
-      color: #bb9af7;
-      border-color: rgba(187, 154, 247, 0.3);
+      background-image: image(url("${pkgs.wlogout}/share/wlogout/icons/reboot.png"));
+      border-color: rgba(187, 154, 247, 0.4);
     }
     #reboot:hover {
       border-color: #bb9af7;
-      box-shadow: 0 0 24px 4px rgba(187, 154, 247, 0.35);
+      box-shadow: 0 0 20px rgba(187, 154, 247, 0.4);
     }
 
     #shutdown {
-      color: #7dcfff;
-      border-color: rgba(125, 207, 255, 0.3);
+      background-image: image(url("${pkgs.wlogout}/share/wlogout/icons/shutdown.png"));
+      border-color: rgba(125, 207, 255, 0.4);
     }
     #shutdown:hover {
       border-color: #7dcfff;
-      box-shadow: 0 0 24px 4px rgba(125, 207, 255, 0.35);
+      box-shadow: 0 0 20px rgba(125, 207, 255, 0.4);
     }
   '';
 
