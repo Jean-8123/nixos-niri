@@ -8,10 +8,12 @@
   # `home-manager.users.jean = import ./home;` ein, deshalb muss default.nix ein
   # vollwertiges Modul sein. Alles Fachliche liegt in ./modules, damit ein
   # Umbau (z. B. Waybar -> Noctalia) nur eine Datei betrifft.
+  # Kein eigenes Theming-Modul: Stylix bringt seit Mitte 2026 ein eigenes
+  # Noctalia-Target mit und erzeugt Palette, Modus, Schrift, Wallpaper-Pfad
+  # und Opacity selbst. Siehe Kommentar in ./modules/noctalia.nix.
   imports = [
     ./modules/noctalia.nix
     ./modules/niri.nix
-    ./modules/theming.nix
     ./modules/terminal.nix
     ./modules/packages.nix
   ];

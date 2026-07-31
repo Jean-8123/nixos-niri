@@ -24,12 +24,6 @@ let
     hash  = "sha256-CUENVkim4k7byI8mALLi52vo+GMkKHCvUTgu3MxImUM=";
   };
 
-  # Wallpaper: dieselbe Datei, die `stylix.image` in configuration.nix nutzt.
-  # Bewusst als relativer Pfad statt über `config.stylix.image`, damit die
-  # Auswertung nicht von der NixOS -> Home-Manager-Vererbung von Stylix abhängt.
-  # Als echter Nix-Pfad (nicht `toString`), damit die Datei garantiert in den
-  # Store kopiert wird und der eingetragene Pfad zur Laufzeit auch existiert.
-  wallpaperPath = ../../assets/NixOS_Black_Sun.png;
 in
 {
   # ==========================================================================
@@ -68,10 +62,13 @@ in
 
       # ── Shell ────────────────────────────────────────────────────────────
       shell = {
-        # Muss explizit gesetzt werden: Stylix hat KEIN Noctalia-Target, das
-        # Theming erreicht die Shell also nicht. Wert identisch zu
-        # `stylix.fonts.monospace.name` in configuration.nix.
-        font_family      = "JetBrainsMono Nerd Font";
+        # Stylix' Noctalia-Target setzt die Schrift auf `fonts.sansSerif.name`.
+        # Da `stylix.fonts.sansSerif` in configuration.nix nicht gesetzt ist,
+        # landet dort der Default "DejaVu Sans" — ohne Nerd-Font-Glyphen und
+        # optisch ein Bruch zum bisherigen Waybar-Look.
+        # `mkForce` gewinnt gegen die Target-Definition; ohne das gaebe es einen
+        # "conflicting definition values"-Fehler beim Bauen.
+        font_family      = lib.mkForce "JetBrainsMono Nerd Font";
 
         # Noctalia bringt einen eigenen Polkit-Agenten mit (Default: aus).
         # Er wird hier aktiviert, weil `security.polkit.enable = true` in
@@ -91,17 +88,19 @@ in
       };
 
       # ── Theme ────────────────────────────────────────────────────────────
+      # Farben, Modus und Palette kommen komplett von Stylix.
+      # Stylix hat seit Mitte 2026 ein eigenes Noctalia-Target
+      # (stylix/modules/noctalia/hm.nix), das aus dem base16-Schema setzt:
+      #   theme.source = "custom", theme.custom_palette = "stylix"
+      #   theme.mode aus stylix.polarity
+      #   customPalettes.stylix.dark mit allen 16 Material-Rollen + Terminal
+      #   shell.font_family aus stylix.fonts.sansSerif
+      #   wallpaper.default.path aus stylix.image
+      #   dock/notification/osd.background_opacity aus stylix.opacity
+      # Deshalb wird hier nichts davon mehr von Hand gesetzt — jede eigene
+      # Definition kollidiert mit dem Target.
+      # Abschalten liesse sich das Target ueber stylix.targets.noctalia.enable.
       theme = {
-        # Dunkel, passend zu `stylix.polarity = "dark"` in configuration.nix.
-        mode           = "dark";
-
-        # Farben kommen aus einer eigenen Palette, nicht aus einem Built-in.
-        source         = "custom";
-
-        # Dateibasisname ohne ".json" unter ~/.config/noctalia/palettes/.
-        # Wird in home/modules/theming.nix als `customPalettes.Stylix` erzeugt.
-        custom_palette = "Stylix";
-
         templates = {
           # ────────────────────────────────────────────────────────────────
           # Template-Engine KOMPLETT aus — konkreter Konflikt mit Stylix:
@@ -224,15 +223,12 @@ in
       };
 
       # ── Wallpaper ────────────────────────────────────────────────────────
-      # Ersetzt swww + waypaper. Zeigt dasselbe Bild wie `stylix.image`,
-      # damit der Desktop nach der Migration unverändert aussieht.
+      # Ersetzt swww + waypaper. Das Bild selbst kommt aus `stylix.image`,
+      # eingetragen vom Stylix-Noctalia-Target (wallpaper.default.path) —
+      # hier deshalb nur noch das Verhalten.
       wallpaper = {
         enabled   = true;
         fill_mode = "crop";
-
-        default = {
-          path = wallpaperPath;
-        };
       };
 
       # ── Audio ────────────────────────────────────────────────────────────

@@ -21,7 +21,6 @@ graph TD
     mods --> m2["gaming.nix"]
 
     home --> hm1["modules/noctalia.nix<br/>Shell: Bar, Launcher, ..."]
-    home --> hm2["modules/theming.nix<br/>Stylix -> Noctalia-Palette"]
     home --> hm3["modules/niri.nix<br/>liefert niri-config.kdl aus"]
     home --> hm4["modules/terminal.nix<br/>Kitty"]
     home --> hm5["modules/packages.nix<br/>User-Pakete"]
@@ -175,14 +174,6 @@ einfach hochgezogen werden.
 
 Die komplette Noctalia-v5-Konfiguration (siehe eigener Abschnitt
 [Noctalia](#noctalia) weiter unten) plus das Cheatsheet-Plugin.
-
----
-
-### `home/modules/theming.nix`
-
-Übersetzt die base16-Palette aus Stylix in Noctalias 16 Material-Farbrollen
-(`programs.noctalia.customPalettes.Stylix`). Einziger Berührungspunkt zwischen
-beiden Theming-Systemen — Details im Abschnitt [Theming](#theming).
 
 ---
 
@@ -553,20 +544,29 @@ Grund ist ein konkreter Konflikt: Stylix schreibt App-Theme-Dateien zur
 zur Laufzeit überschreiben wollen. Das schlägt entweder fehl (der Store ist
 read-only) oder zerstört den deklarativen Zustand.
 
-Stattdessen gibt es **genau einen Berührungspunkt**: `home/modules/theming.nix`.
-Dort werden die base16-Farben aus Stylix (`config.lib.stylix.colors.withHashtag`)
-zur Eval-Zeit in Noctalias 16 Material-Farbrollen übersetzt und als
-Custom-Palette abgelegt:
+Die Brücke zwischen beiden Systemen baut **Stylix selbst**: seit Mitte 2026 gibt
+es ein Noctalia-Target (`stylix/modules/noctalia/hm.nix`). Es leitet aus dem
+base16-Schema ab:
 
-```
-programs.noctalia.customPalettes.Stylix
-  -> ~/.config/noctalia/palettes/Stylix.json
-```
+| Noctalia-Einstellung | Quelle in Stylix |
+|---|---|
+| `theme.source = "custom"`, `theme.custom_palette = "stylix"` | fest |
+| `customPalettes.stylix.dark` (16 Material-Rollen + Terminal-Block) | `base16Scheme` |
+| `theme.mode` | `polarity` |
+| `shell.font_family` | `fonts.sansSerif.name` |
+| `wallpaper.default.path` | `image` |
+| `dock` / `notification` / `osd` `.background_opacity` | `opacity` |
 
-Der Attributname `Stylix` muss exakt dem `theme.custom_palette = "Stylix"` in
-`home/modules/noctalia.nix` entsprechen. Bei fehlender oder ungültiger Datei
-fällt Noctalia **stillschweigend** auf seine eingebaute Palette zurück — der
-Fehler ist dann nur optisch sichtbar, nicht als Build-Fehler.
+Deshalb setzt `home/modules/noctalia.nix` **nichts davon** selbst — jede eigene
+Definition würde mit dem Target kollidieren (`conflicting definition values`).
+
+Eine Ausnahme: `shell.font_family` steht auf `lib.mkForce "JetBrainsMono Nerd
+Font"`. `stylix.fonts.sansSerif` ist hier nicht gesetzt, das Target würde also
+den Default „DejaVu Sans" eintragen — ohne Nerd-Font-Glyphen. Wer das sauberer
+will, setzt stattdessen `stylix.fonts.sansSerif` in `configuration.nix` und
+entfernt das `mkForce`.
+
+Abschalten liesse sich das Target über `stylix.targets.noctalia.enable = false`.
 
 Wird das base16-Schema in `configuration.nix` getauscht, wandert die Änderung
 automatisch bis in die Shell mit.
