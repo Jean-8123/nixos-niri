@@ -16,6 +16,7 @@
     ./modules/niri.nix
     ./modules/terminal.nix
     ./modules/packages.nix
+    ./modules/filemanager.nix
   ];
 
   # ==========================================================================
