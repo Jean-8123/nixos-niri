@@ -384,24 +384,25 @@ window-rule {
 // "bar-.+" unten trifft ihn. Namespaces zur Kontrolle: `niri msg layers`.
 // ---------------------------------------------------------------------------
 
-// ACHTUNG: "background-effect" und der globale "blur"-Block gibt es erst ab
-// niri 26.04. Ein älterer Compositor bricht mit
-//     x unexpected node `background-effect`
-// ab und behält die zuletzt gültige Konfiguration.
-//
-// STOLPERFALLE: `nixos-rebuild switch` tauscht zwar das niri-Binary, nicht aber
-// den laufenden Compositor-Prozess. Die alte Session liest die neue config.kdl
-// per Hot-Reload trotzdem ein und lehnt sie ab. Nach einem niri-Upgrade also
-// einmal ab- und wieder anmelden. Zum Unterscheiden:
-//     niri --version     -> Binary auf PATH
-//     niri msg version   -> tatsächlich laufender Prozess
-//
-// Auf niri <= 25.11 diese drei Blöcke (globales blur + beide layer-rules) mit
-// "/-" davor auskommentieren. "place-within-backdrop" weiter unten läuft schon
-// ab 25.05 und kann bleiben.
+// ###########################################################################
+// ## BLUR — deaktiviert, weil dieses System auf niri 25.11 läuft.          ##
+// ##                                                                       ##
+// ## Der globale "blur"-Block und "background-effect" in layer-rule gibt   ##
+// ## es erst ab niri 26.04. Auf 25.11 bricht `niri validate` mit           ##
+// ##     x unexpected node `blur`                                          ##
+// ##     x unexpected node `background-effect`                             ##
+// ## ab; niri behält dann die zuletzt gültige Konfiguration.               ##
+// ##                                                                       ##
+// ## AKTIVIEREN: sobald `niri msg version` 26.04 oder neuer meldet, die    ##
+// ## drei "/-" vor den Blöcken unten entfernen. Sonst nichts zu tun.       ##
+// ##                                                                       ##
+// ## Prüfen:                                                               ##
+// ##     niri msg version   # Compositor UND CLI                           ##
+// ##     niri validate      # meckert sofort, ohne die Session zu riskieren##
+// ###########################################################################
 
 // Globale Blur-Parameter. Muss auf oberster Ebene stehen, nicht in einer Regel.
-blur {
+/-blur {
     passes 2
     offset 3.0
     noise 0.03
@@ -415,7 +416,7 @@ blur {
 // "notification" fehlt in der Aufzählung absichtlich: laut noctalia#2948
 // verschwindet der Blur nicht, wenn man eine Benachrichtigung vor Ablauf des
 // Timeouts wegklickt. Der Fleck bliebe dann stehen.
-layer-rule {
+/-layer-rule {
     match namespace="^noctalia-(bar-.+|dock|panel|attached-panel|osd)$"
     background-effect {
         xray false
@@ -423,7 +424,7 @@ layer-rule {
 }
 
 // Blur für Noctalias Fensterwechsler erzwingen und xray abschalten.
-layer-rule {
+/-layer-rule {
     match namespace="^noctalia-window-switcher$"
     background-effect {
         blur true
@@ -431,7 +432,12 @@ layer-rule {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Ab hier: läuft auch auf niri 25.11.
+// ---------------------------------------------------------------------------
+
 // Benachrichtigungen nicht in Screenshares/Aufnahmen durchreichen.
+// (block-out-from gibt es seit niri 25.02)
 layer-rule {
     match namespace="^noctalia-notification"
     block-out-from "screencast"
@@ -451,6 +457,7 @@ layer-rule {
 // und liefert dafür eine eigene Backdrop-Fläche. Variante 1 ist die einzige,
 // die ohne Eingriffe in layout {} und overview {} auskommt und das
 // Hintergrundbild in der Übersicht sichtbar lässt.
+// (place-within-backdrop gibt es seit niri 25.05)
 layer-rule {
     match namespace="^noctalia-backdrop"
     place-within-backdrop true

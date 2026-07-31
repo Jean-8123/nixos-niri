@@ -274,40 +274,55 @@ aber auch, wenn Noctalia gerade nicht läuft.
 - Picture-in-Picture: Floating
 - `dev.noctalia.Noctalia` (Einstellungsfenster): Floating, 1080x920
 
-**Layer Rules (Noctalia):**
+**Layer Rules (Noctalia) — aktiv:**
+- `^noctalia-notification`: `block-out-from "screencast"` (seit niri 25.02)
+- `^noctalia-backdrop`: `place-within-backdrop true` (seit niri 25.05; Hintergrundbild bleibt in der Overview sichtbar)
+
+**Blur — mit `/-` deaktiviert, weil dieses System auf niri 25.11 läuft:**
 - global `blur { passes 2; offset 3.0; noise 0.03; saturation 1.0 }`
 - `^noctalia-(bar-.+|dock|panel|attached-panel|osd)$`: `background-effect { xray false }`
 - `^noctalia-window-switcher$`: `background-effect { blur true; xray false }`
-- `^noctalia-notification`: `block-out-from "screencast"`
-- `^noctalia-backdrop`: `place-within-backdrop true` (Hintergrundbild bleibt in der Overview sichtbar)
+
+Der globale `blur`-Block und `background-effect` in `layer-rule` existieren erst
+ab **niri 26.04** (Release 25.04.2026). Auf 25.11 bricht `niri validate` ab mit:
+
+```
+x unexpected node `blur`
+x unexpected node `background-effect`
+```
+
+niri behält dann die zuletzt gültige Konfiguration — die Session geht also nicht
+verloren, die neuen Regeln greifen aber auch nicht.
+
+**Aktivieren**, sobald niri ≥ 26.04 läuft: in `home/niri-config.kdl` die drei
+`/-` vor `blur` und den beiden `layer-rule`-Blöcken entfernen. Mehr ist nicht
+nötig.
 
 `notification` fehlt in der Blur-Aufzählung bewusst: laut
 [noctalia#2948](https://github.com/noctalia-dev/noctalia/issues/2948) bleibt der
 Blur-Fleck stehen, wenn man eine Benachrichtigung vor Ablauf des Timeouts
 wegklickt.
 
-Namespaces zur Kontrolle: `niri msg layers`.
+Nützliche Kommandos:
 
-> **niri ≥ 26.04 erforderlich.** `background-effect` und der globale
-> `blur`-Block gibt es erst ab niri 26.04 (Release 25.04.2026). Ein älterer
-> Compositor bricht mit `x unexpected node 'background-effect'` ab und behält
-> die zuletzt gültige Konfiguration. Dann den globalen `blur`-Block und die
-> beiden `background-effect`-Regeln in `home/niri-config.kdl` mit `/-` davor
-> auskommentieren. `place-within-backdrop` und `block-out-from` laufen schon ab
-> 25.05 bzw. 25.02 und können bleiben.
+```bash
+niri validate      # prueft config.kdl, ohne die laufende Session zu gefaehrden
+niri msg version   # Version von Compositor UND CLI
+niri msg layers    # tatsaechliche Layer-Namespaces (Regex gegenpruefen)
+```
 
-> **Stolperfalle nach einem niri-Upgrade.** `nixos-rebuild switch` ersetzt das
-> niri-Binary, **nicht** den laufenden Compositor-Prozess. Die alte Session
-> liest die neue `config.kdl` per Hot-Reload trotzdem ein — und lehnt sie mit
-> genau obigem Fehler ab, obwohl das neue Binary die Syntax könnte. Abhilfe:
-> einmal ab- und wieder anmelden. Zum Unterscheiden:
+> **Wenn `niri msg version` eine ältere Version meldet als erwartet:** prüfen,
+> was das Flake überhaupt ausliefert und was tatsächlich im PATH liegt.
 >
 > ```bash
-> niri --version     # Binary auf PATH
-> niri msg version   # tatsaechlich laufender Prozess
+> nix eval --raw .#nixosConfigurations.LT-nixos.pkgs.niri.version
+> readlink -f "$(command -v niri)"
+> nix flake metadata --json | jq -r '.locks.nodes.nixpkgs.locked.rev'
 > ```
 >
-> Weichen die beiden ab, ist es genau dieser Fall.
+> Weichen erste und zweite Zeile voneinander ab, läuft die Session noch aus
+> einer älteren Generation — ab- und wieder anmelden. Meldet schon die erste
+> Zeile die alte Version, liegt es am Lock bzw. am nixpkgs-Stand.
 
 **Debug:**
 ```kdl
