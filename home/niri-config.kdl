@@ -379,36 +379,62 @@ window-rule {
 
 // ---------------------------------------------------------------------------
 // Layer-Regeln für Noctalia v5
-// Übernommen aus der offiziellen Noctalia-Dokumentation (Seite "niri").
 // Die Leiste heißt in unserer Nix-Konfiguration [bar.main], ihr
 // Layer-Shell-Namespace ist also "noctalia-bar-main" — der Ausdruck
-// "bar-[^\"]+" unten trifft ihn.
+// "bar-.+" unten trifft ihn. Namespaces zur Kontrolle: `niri msg layers`.
 // ---------------------------------------------------------------------------
 
-// ACHTUNG: "background-effect" (bzw. das Protokoll ext-background-effect)
-// benötigt niri >= 26.04. Auf einem älteren niri lehnt der Compositor diese
-// beiden Blöcke ab und startet nicht — dann einfach beide mit "/-" davor
-// auskommentieren, bis das flake-Update niri 26.04 gebracht hat.
-// "place-within-backdrop" weiter unten braucht nur niri >= 25.05.
+// ACHTUNG: "background-effect" und der globale "blur"-Block gibt es erst ab
+// niri 26.04. Ein älterer Compositor bricht mit
+//     x unexpected node `background-effect`
+// ab und behält die zuletzt gültige Konfiguration.
+//
+// STOLPERFALLE: `nixos-rebuild switch` tauscht zwar das niri-Binary, nicht aber
+// den laufenden Compositor-Prozess. Die alte Session liest die neue config.kdl
+// per Hot-Reload trotzdem ein und lehnt sie ab. Nach einem niri-Upgrade also
+// einmal ab- und wieder anmelden. Zum Unterscheiden:
+//     niri --version     -> Binary auf PATH
+//     niri msg version   -> tatsächlich laufender Prozess
+//
+// Auf niri <= 25.11 diese drei Blöcke (globales blur + beide layer-rules) mit
+// "/-" davor auskommentieren. "place-within-backdrop" weiter unten läuft schon
+// ab 25.05 und kann bleiben.
 
-// Noctalia: Auf allen eigenen Oberflächen xray abschalten, damit der Effekt
-// realistischer wirkt. Noctalia meldet seine Blur-Regionen selbst an, sobald
-// ext-background-effects verfügbar ist.
+// Globale Blur-Parameter. Muss auf oberster Ebene stehen, nicht in einer Regel.
+blur {
+    passes 2
+    offset 3.0
+    noise 0.03
+    saturation 1.0
+}
+
+// Noctalia: Auf den eigenen Oberflächen xray abschalten, damit der Effekt
+// realistischer wirkt. "blur" wird hier bewusst nicht erzwungen — Noctalia
+// meldet seine Blur-Regionen über ext-background-effect selbst an.
+//
+// "notification" fehlt in der Aufzählung absichtlich: laut noctalia#2948
+// verschwindet der Blur nicht, wenn man eine Benachrichtigung vor Ablauf des
+// Timeouts wegklickt. Der Fleck bliebe dann stehen.
 layer-rule {
-    match namespace="^noctalia-(bar-[^\"]+|notification|dock|panel|attached-panel|osd)$"
+    match namespace="^noctalia-(bar-.+|dock|panel|attached-panel|osd)$"
     background-effect {
         xray false
-        // blur false
     }
 }
 
-// Blur für Noctalias Fensterwechsler einschalten und xray abschalten.
+// Blur für Noctalias Fensterwechsler erzwingen und xray abschalten.
 layer-rule {
-    match namespace="noctalia-window-switcher"
+    match namespace="^noctalia-window-switcher$"
     background-effect {
         blur true
         xray false
     }
+}
+
+// Benachrichtigungen nicht in Screenshares/Aufnahmen durchreichen.
+layer-rule {
+    match namespace="^noctalia-notification"
+    block-out-from "screencast"
 }
 
 // Hintergrundbild in der Übersicht (Overview).

@@ -275,16 +275,39 @@ aber auch, wenn Noctalia gerade nicht läuft.
 - `dev.noctalia.Noctalia` (Einstellungsfenster): Floating, 1080x920
 
 **Layer Rules (Noctalia):**
-- `^noctalia-(bar-…|notification|dock|panel|attached-panel|osd)$`: `background-effect { xray false }`
-- `noctalia-window-switcher`: `background-effect { blur true; xray false }`
+- global `blur { passes 2; offset 3.0; noise 0.03; saturation 1.0 }`
+- `^noctalia-(bar-.+|dock|panel|attached-panel|osd)$`: `background-effect { xray false }`
+- `^noctalia-window-switcher$`: `background-effect { blur true; xray false }`
+- `^noctalia-notification`: `block-out-from "screencast"`
 - `^noctalia-backdrop`: `place-within-backdrop true` (Hintergrundbild bleibt in der Overview sichtbar)
 
-> **niri ≥ 26.04 erforderlich.** `background-effect` bzw. das Protokoll
-> `ext-background-effect` gibt es erst ab niri 26.04. Ein älterer Compositor
-> lehnt die beiden Blöcke ab und **startet nicht**. Dann die betroffenen
-> `layer-rule`-Blöcke in `home/niri-config.kdl` mit `/-` davor auskommentieren,
-> bis ein `nix flake update` niri 26.04 gebracht hat. `place-within-backdrop`
-> braucht nur niri ≥ 25.05.
+`notification` fehlt in der Blur-Aufzählung bewusst: laut
+[noctalia#2948](https://github.com/noctalia-dev/noctalia/issues/2948) bleibt der
+Blur-Fleck stehen, wenn man eine Benachrichtigung vor Ablauf des Timeouts
+wegklickt.
+
+Namespaces zur Kontrolle: `niri msg layers`.
+
+> **niri ≥ 26.04 erforderlich.** `background-effect` und der globale
+> `blur`-Block gibt es erst ab niri 26.04 (Release 25.04.2026). Ein älterer
+> Compositor bricht mit `x unexpected node 'background-effect'` ab und behält
+> die zuletzt gültige Konfiguration. Dann den globalen `blur`-Block und die
+> beiden `background-effect`-Regeln in `home/niri-config.kdl` mit `/-` davor
+> auskommentieren. `place-within-backdrop` und `block-out-from` laufen schon ab
+> 25.05 bzw. 25.02 und können bleiben.
+
+> **Stolperfalle nach einem niri-Upgrade.** `nixos-rebuild switch` ersetzt das
+> niri-Binary, **nicht** den laufenden Compositor-Prozess. Die alte Session
+> liest die neue `config.kdl` per Hot-Reload trotzdem ein — und lehnt sie mit
+> genau obigem Fehler ab, obwohl das neue Binary die Syntax könnte. Abhilfe:
+> einmal ab- und wieder anmelden. Zum Unterscheiden:
+>
+> ```bash
+> niri --version     # Binary auf PATH
+> niri msg version   # tatsaechlich laufender Prozess
+> ```
+>
+> Weichen die beiden ab, ist es genau dieser Fall.
 
 **Debug:**
 ```kdl
