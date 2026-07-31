@@ -267,11 +267,12 @@ layout {
 // which may be more convenient to use.
 // See the binds section below for more spawn examples.
 
-// This line starts waybar, a commonly used bar for Wayland compositors.
-spawn-at-startup "waybar"
+// Noctalia v5 ist die komplette Shell: Leiste, Launcher, Benachrichtigungen,
+// Sperrbildschirm, Sitzungsmenü, Hintergrundbild, Idle-Verwaltung,
+// Zwischenablage, OSD und Polkit-Agent kommen alle von hier.
+// Deshalb entfallen waybar, mako und der swww-daemon ersatzlos.
+spawn-at-startup "noctalia"
 spawn-at-startup "xwayland-satellite"
-spawn-at-startup "swww-daemon"
-spawn-at-startup "mako"
 
 // To run a shell command (with variables, pipes, etc.), use spawn-sh-at-startup:
 // spawn-sh-at-startup "qs -c ~/source/qs/MyAwesomeShell"
@@ -348,6 +349,15 @@ window-rule {
     match is-active=false
     opacity 0.85
 }
+
+// Noctalias eigenes Einstellungsfenster schwebend öffnen (Empfehlung aus den
+// Noctalia-Dokumenten für niri).
+window-rule {
+    match app-id="dev.noctalia.Noctalia"
+    open-floating true
+    default-column-width { fixed 1080; }
+    default-window-height { fixed 920; }
+}
 // Example: block out two password managers from screen capture.
 // (This example rule is commented out with a "/-" in front.)
 /-window-rule {
@@ -367,6 +377,59 @@ window-rule {
     clip-to-geometry true
 }
 
+// ---------------------------------------------------------------------------
+// Layer-Regeln für Noctalia v5
+// Übernommen aus der offiziellen Noctalia-Dokumentation (Seite "niri").
+// Die Leiste heißt in unserer Nix-Konfiguration [bar.main], ihr
+// Layer-Shell-Namespace ist also "noctalia-bar-main" — der Ausdruck
+// "bar-[^\"]+" unten trifft ihn.
+// ---------------------------------------------------------------------------
+
+// ACHTUNG: "background-effect" (bzw. das Protokoll ext-background-effect)
+// benötigt niri >= 26.04. Auf einem älteren niri lehnt der Compositor diese
+// beiden Blöcke ab und startet nicht — dann einfach beide mit "/-" davor
+// auskommentieren, bis das flake-Update niri 26.04 gebracht hat.
+// "place-within-backdrop" weiter unten braucht nur niri >= 25.05.
+
+// Noctalia: Auf allen eigenen Oberflächen xray abschalten, damit der Effekt
+// realistischer wirkt. Noctalia meldet seine Blur-Regionen selbst an, sobald
+// ext-background-effects verfügbar ist.
+layer-rule {
+    match namespace="^noctalia-(bar-[^\"]+|notification|dock|panel|attached-panel|osd)$"
+    background-effect {
+        xray false
+        // blur false
+    }
+}
+
+// Blur für Noctalias Fensterwechsler einschalten und xray abschalten.
+layer-rule {
+    match namespace="noctalia-window-switcher"
+    background-effect {
+        blur true
+        xray false
+    }
+}
+
+// Hintergrundbild in der Übersicht (Overview).
+// Die Dokumentation nennt drei sich gegenseitig ausschließende Varianten:
+//   1. Noctalias Backdrop-Fläche in niris Backdrop legen  -> unschärferes
+//      Hintergrundbild in der Übersicht.
+//   2. Namespace "^noctalia-wallpaper" in den Backdrop legen; dazu müssten
+//      zusätzlich layout { background-color "transparent" } gesetzt und die
+//      Arbeitsflächen-Schatten in overview {} abgeschaltet werden -> das
+//      Hintergrundbild steht in der Übersicht still.
+//   3. Gar kein Hintergrundbild in der Übersicht, stattdessen
+//      overview { backdrop-color "#..." } -> einfarbige Fläche.
+// Wir nehmen Variante 1: Noctalia verwaltet das Hintergrundbild jetzt selbst
+// und liefert dafür eine eigene Backdrop-Fläche. Variante 1 ist die einzige,
+// die ohne Eingriffe in layout {} und overview {} auskommt und das
+// Hintergrundbild in der Übersicht sichtbar lässt.
+layer-rule {
+    match namespace="^noctalia-backdrop"
+    place-within-backdrop true
+}
+
 binds {
     // Keys consist of modifiers separated by + signs, followed by an XKB key name
     // in the end. To find an XKB name for a particular key, you may use a program
@@ -384,13 +447,39 @@ binds {
 
     // Suggested binds for running programs: terminal, app launcher, screen locker.
     Mod+T hotkey-overlay-title="Open a Terminal: kitty" { spawn "kitty"; }
-    Mod+Space hotkey-overlay-title="Run an Application: fuzzel" { spawn "fuzzel"; }
-    Super+Alt+L hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock"; }
+    Mod+Space hotkey-overlay-title="Anwendung starten: Noctalia-Launcher" { spawn "noctalia" "msg" "panel-toggle" "launcher"; }
+    Super+Alt+L hotkey-overlay-title="Bildschirm sperren: Noctalia" { spawn "noctalia" "msg" "session" "lock"; }
     Super+Shift+B hotkey-overlay-title="Open the Browser: brave" { spawn "brave"; }
     // Use spawn-sh to run a shell command. Do this if you need pipes, multiple commands, etc.
     // Note: the entire command goes as a single argument. It's passed verbatim to `sh -c`.
     // For example, this is a standard bind to toggle the screen reader (orca).
     Super+Alt+S allow-when-locked=true hotkey-overlay-title=null { spawn-sh "pkill orca || exec orca"; }
+
+    // --- Noctalia v5 ---------------------------------------------------------
+
+    // Tastenkürzel-Spickzettel (Plugin "kenn/keybind-cheatsheet").
+    Mod+F1 hotkey-overlay-title="Tastenkürzel-Spickzettel anzeigen" { spawn "noctalia" "msg" "panel-toggle" "kenn/keybind-cheatsheet:cheatsheet"; }
+    // Das Plugin liest ~/.config/niri/config.kdl genau einmal beim Laden ein und
+    // hat keinen Datei-Watcher. Dieser Pfad ist bei uns ein schreibgeschützter
+    // Symlink in den Nix-Store, der bei jedem nixos-rebuild ausgetauscht wird —
+    // deshalb ist dieses manuelle Neueinlesen nach jedem Rebuild nötig.
+    Mod+Shift+F1 hotkey-overlay-title="Spickzettel-Daten neu einlesen" { spawn "noctalia" "msg" "plugin" "kenn/keybind-cheatsheet:data" "all" "refresh"; }
+
+    // Sitzungs- bzw. Power-Menü — ersetzt den früheren wlogout-Knopf im Tray.
+    Mod+X hotkey-overlay-title="Sitzungsmenü: Abmelden, Neustart, Herunterfahren" { spawn "noctalia" "msg" "panel-toggle" "session"; }
+    Mod+N hotkey-overlay-title="Kontrollzentrum öffnen" { spawn "noctalia" "msg" "panel-toggle" "control-center"; }
+    // Mod+V und Mod+Shift+V sind bereits durch die Floating-Aktionen belegt,
+    // die Zwischenablage bekommt daher Mod+Ctrl+V.
+    Mod+Ctrl+V hotkey-overlay-title="Verlauf der Zwischenablage" { spawn "noctalia" "msg" "panel-toggle" "clipboard"; }
+    Mod+P hotkey-overlay-title="Hintergrundbild auswählen" { spawn "noctalia" "msg" "panel-toggle" "wallpaper"; }
+
+    // -------------------------------------------------------------------------
+
+    // Bewusste Entscheidung: Lautstärke-, Mikrofon-, Medien- und
+    // Helligkeitstasten bleiben direkt auf wpctl / playerctl / brightnessctl.
+    // Noctalias OSD beobachtet PipeWire und zeigt die Änderung trotzdem an.
+    // Würde man sie über "noctalia msg volume-up" o. Ä. leiten, wären diese
+    // Hardwaretasten hart davon abhängig, dass Noctalia gerade läuft.
 
     // Example volume keys mappings for PipeWire & WirePlumber.
     // The allow-when-locked=true property makes them work even when the session is locked.
@@ -641,4 +730,13 @@ binds {
     // Powers off the monitors. To turn them back on, do any input like
     // moving the mouse or pressing any other key.
     Mod+Shift+P { power-off-monitors; }
+}
+
+// Von der Noctalia-Dokumentation empfohlen: Noctalia löst Fensteraktivierung
+// (xdg-activation) aus, ohne dass ein gültiges Serial vorliegt — etwa wenn man
+// in einer Benachrichtigung auf eine Aktion klickt oder über den Fensterwechsler
+// zu einem Fenster springt. Ohne diese Zeile ignoriert niri solche Anfragen und
+// der Fokus bleibt stehen.
+debug {
+    honor-xdg-activation-with-invalid-serial
 }

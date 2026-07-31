@@ -1,23 +1,32 @@
 # NixOS Konfiguration mit Niri
 
-Eine deklarative NixOS-Konfiguration mit dem Niri Wayland Compositor, Stylix Theming und Home-Manager.
+Eine deklarative NixOS-Konfiguration mit dem Niri Wayland Compositor, der Noctalia-v5-Shell, Stylix Theming und Home-Manager.
 
 ## Verzeichnisstruktur
 
-```
-nixos-niri/
-├── flake.nix              # Flake-Definition mit Inputs und System-Konfiguration
-├── configuration.nix      # Hauptkonfiguration (System-weit)
-├── hosts/
-│   └── LT-hardware.nix    # Hardware-spezifische Konfiguration (Laptop)
-├── modules/
-│   ├── nvidia.nix         # NVIDIA Grafiktreiber Modul
-│   └── gaming.nix         # Gaming (Steam, Heroic, Lutris, etc.)
-├── home/
-│   ├── home.nix           # Home-Manager Konfiguration (User-spezifisch)
-│   └── niri-config.kdl    # Niri Window Manager Konfiguration
-└── assets/
-    └── *.png              # Wallpaper und Bilder
+```mermaid
+graph TD
+    flake["flake.nix<br/>Inputs + mkHost"]
+
+    flake --> conf["configuration.nix<br/>System-weit"]
+    flake --> hosts["hosts/"]
+    flake --> mods["modules/"]
+    flake --> home["home/default.nix<br/>Home-Manager Einstieg"]
+    flake --> assets["assets/<br/>Wallpaper"]
+
+    hosts --> h1["LT-hardware.nix"]
+    hosts --> h2["zLT-hardware.nix"]
+
+    mods --> m1["nvidia.nix"]
+    mods --> m2["gaming.nix"]
+
+    home --> hm1["modules/noctalia.nix<br/>Shell: Bar, Launcher, ..."]
+    home --> hm2["modules/theming.nix<br/>Stylix -> Noctalia-Palette"]
+    home --> hm3["modules/niri.nix<br/>liefert niri-config.kdl aus"]
+    home --> hm4["modules/terminal.nix<br/>Kitty"]
+    home --> hm5["modules/packages.nix<br/>User-Pakete"]
+
+    hm3 --> kdl["niri-config.kdl"]
 ```
 
 ## Dateien im Detail
@@ -31,8 +40,26 @@ Die Flake-Definition verwaltet alle externen Abhängigkeiten:
 | `nixpkgs` | NixOS Unstable Packages |
 | `stylix` | System-weites Theming |
 | `home-manager` | User-spezifische Konfiguration |
+| `noctalia` | Noctalia v5 Wayland-Shell (Branch `cachix`) |
 
-**Host-Konfiguration:** `LT-nixos` (x86_64-linux)
+**Hosts:** `LT-nixos` und `zLT-nixos` (beide x86_64-linux)
+
+Beide Hosts werden über den gemeinsamen Konstruktor `mkHost` erzeugt. Er nimmt
+`hostName`, `hardware` und optionale `extraModules` entgegen; alles andere
+(configuration.nix, nvidia.nix, Stylix, Home-Manager) ist für beide identisch.
+`LT-nixos` bekommt zusätzlich `./modules/gaming.nix`, `zLT-nixos` nicht.
+
+Weitere Besonderheiten:
+
+- `specialArgs = { inherit inputs; }` und `home-manager.extraSpecialArgs` reichen
+  die Flake-Inputs an alle Module durch.
+- `home-manager.sharedModules = [ noctalia.homeModules.default ]` stellt
+  `programs.noctalia.*` bereit (Flake-Output heißt `homeModules`, nicht
+  `homeManagerModules`).
+- Der Noctalia-Input bekommt bewusst **kein** `inputs.nixpkgs.follows`. Ein
+  Override würde den Derivation-Hash ändern und damit jeden Treffer im
+  Binary-Cache `noctalia.cachix.org` zunichte machen — Noctalia v5 müsste dann
+  lokal (meson/C++, ca. 20 Minuten) gebaut werden.
 
 ---
 
@@ -49,13 +76,29 @@ Die zentrale System-Konfiguration. Hier wird alles definiert, was **root-Rechte*
 | **Locale** | en_US.UTF-8 (System), de_DE.UTF-8 (Formate) |
 | **Tastatur** | Deutsches Layout (de) |
 | **Benutzer** | `jean` (wheel, networkmanager) |
-| **Nix** | Flakes und nix-command aktiviert, unfree erlaubt |
+| **Nix** | Flakes und nix-command aktiviert, unfree erlaubt, Noctalia-Cachix als `extra-substituters` |
 
 **System-Programme:**
 
 - `niri` - Wayland Tiling Compositor
 - `git`, `neovim`, `xwayland-satellite`
 - Bluetooth (blueman) aktiviert
+- fwupd (Firmware-Updates)
+
+**Laufzeit-Anforderungen von Noctalia (System-Ebene):**
+
+| Dienst | Wofür |
+|--------|-------|
+| `services.pipewire` (+ `security.rtkit`) | Lautstärke-OSD, Privacy-Indikator, Spektrum-Widget. Braucht einen laufenden Daemon, WirePlumber ≥ 0.5 |
+| `security.polkit.enable` | Voraussetzung für Noctalias eigenen Polkit-Agenten |
+| `services.upower.enable` | Ohne UPower erscheint das Batterie-Widget gar nicht |
+| `services.gnome.gnome-keyring` | Secret-Service-Provider für verschlüsselte Clipboard-History und Kalender-Zugangsdaten; Unlock hängt an `security.pam.services.login.enableGnomeKeyring` |
+
+Bewusst **nicht** gesetzt: mako/dunst/swaync oder ein zweiter
+StatusNotifier-Host — Noctalia beansprucht `org.freedesktop.Notifications` und
+`org.kde.StatusNotifierWatcher` selbst. Der frühere Eintrag
+`security.pam.services.swaylock` ist entfallen; Noctalias Sperrbildschirm
+authentifiziert über den ohnehin vorhandenen PAM-Dienst `login`.
 
 **Stylix Theming:**
 - Theme: Catppuccin Mocha
@@ -65,11 +108,11 @@ Die zentrale System-Konfiguration. Hier wird alles definiert, was **root-Rechte*
 
 ---
 
-### `hosts/LT-hardware.nix`
+### `hosts/LT-hardware.nix`, `hosts/zLT-hardware.nix`
 
-Auto-generierte Hardware-Konfiguration (via `nixos-generate-config`). **Nicht manuell bearbeiten!**
+Auto-generierte Hardware-Konfigurationen (via `nixos-generate-config`). **Nicht manuell bearbeiten!**
 
-- Kernel-Module: `xhci_pci`, `ahci`, `nvme`, `kvm-intel`
+- Kernel-Module: `xhci_pci`, `ahci`/`thunderbolt`/`vmd`, `nvme`, `kvm-intel`
 - Dateisysteme: `/` (ext4), `/boot` (vfat)
 - Swap-Partition aktiviert
 - Intel CPU Microcode Updates
@@ -88,11 +131,14 @@ NVIDIA Grafiktreiber-Konfiguration:
 | `open` | false | Proprietär (nicht open-source) |
 | `nvidiaSettings` | true | nvidia-settings GUI |
 
+Hinweis: Das Modul steckt in `mkHost` in der gemeinsamen Modulliste und ist
+damit auf **beiden** Hosts aktiv.
+
 ---
 
 ### `modules/gaming.nix`
 
-Gaming-Konfiguration mit Steam und weiteren Tools:
+Gaming-Konfiguration mit Steam und weiteren Tools (nur `LT-nixos`):
 
 | Komponente | Beschreibung |
 | ---------- | ------------ |
@@ -102,12 +148,15 @@ Gaming-Konfiguration mit Steam und weiteren Tools:
 | **Lutris** | Wine Gaming Platform |
 | **MangoHud** | FPS Overlay & Performance Monitoring |
 | **ProtonUp-Qt** | Proton/Wine Version Manager |
+| **Sonstiges** | qbittorrent, protonvpn-gui |
 
 ---
 
-### `home/home.nix`
+### `home/default.nix`
 
-Home-Manager Konfiguration für User `jean`. Hier wird alles definiert, was **keine root-Rechte** braucht.
+Einstiegspunkt für Home-Manager (User `jean`). Die Datei enthält selbst nur die
+Grundeinstellungen und bindet über `imports` die Fachmodule aus `home/modules/`
+ein. `flake.nix` lädt sie über `home-manager.users.jean = import ./home;`.
 
 **Session-Variablen:**
 ```nix
@@ -116,22 +165,58 @@ GTK_THEME = "Adwaita:dark"
 TERMINAL = "kitty"
 ```
 
+`home.stateVersion` bleibt bewusst auf `"25.05"` — sie beschreibt, gegen welche
+Home-Manager-Defaults die Konfiguration geschrieben wurde, und darf nicht
+einfach hochgezogen werden.
+
+---
+
+### `home/modules/noctalia.nix`
+
+Die komplette Noctalia-v5-Konfiguration (siehe eigener Abschnitt
+[Noctalia](#noctalia) weiter unten) plus das Cheatsheet-Plugin.
+
+---
+
+### `home/modules/theming.nix`
+
+Übersetzt die base16-Palette aus Stylix in Noctalias 16 Material-Farbrollen
+(`programs.noctalia.customPalettes.Stylix`). Einziger Berührungspunkt zwischen
+beiden Theming-Systemen — Details im Abschnitt [Theming](#theming).
+
+---
+
+### `home/modules/terminal.nix`
+
+Aktiviert Kitty. Schrift, Schriftgröße, Farbschema und Transparenz kommen
+vollständig aus dem Stylix-Kitty-Target; eigene Werte hier würden kollidieren.
+
+---
+
+### `home/modules/packages.nix`
+
 **Installierte Pakete:**
 
 | Kategorie | Pakete |
 |-----------|--------|
 | **Browser** | Brave (Wayland) |
 | **Terminal** | kitty, alacritty |
-| **CLI Tools** | fastfetch, btop, ripgrep, fd, lazygit, unzip |
-| **Wayland** | swaylock, swayidle, swww, waypaper, wlogout, mako, udiskie |
-| **Entwicklung** | nodejs, gcc |
-| **Apps** | localsend, pavucontrol, networkmanagerapplet, qbittorrent, protonvpn-gui, krita, aseprite |
+| **CLI Tools** | fastfetch, btop, ripgrep, fd, lazygit, unzip, xxd, impala |
+| **Wayland** | xdg-desktop-portal-gtk, xdg-desktop-portal-gnome, udiskie |
+| **Entwicklung** | nodejs, gcc, go, python315 |
+| **Apps** | localsend, pavucontrol, networkmanagerapplet, krita, aseprite, discord, spotify |
 
-**Konfigurierte Programme:**
+Entfallen gegenüber dem Waybar-Setup: `waybar`, `wlogout`, `swaylock(-effects)`,
+`fuzzel`, `mako`, `swww`, `waypaper`, `swayidle`. Diese Funktionen bringt
+Noctalia jetzt selbst mit; ein Parallelbetrieb wäre sogar schädlich.
 
-- **Kitty** - GPU-beschleunigtes Terminal
-- **Waybar** - Status-Leiste mit Workspaces, Uhr, Bluetooth, Batterie, Netzwerk, Audio, Power
-- **Fuzzel** - Wayland App-Launcher
+---
+
+### `home/modules/niri.nix`
+
+Reicht `home/niri-config.kdl` unverändert als
+`xdg.configFile."niri/config.kdl"` durch. Die KDL-Datei wird bewusst nicht aus
+Nix generiert, damit sie mit der Upstream-Doku vergleichbar bleibt.
 
 ---
 
@@ -151,7 +236,7 @@ Niri Window Manager Konfiguration (KDL Format).
 
 **Startup-Programme:**
 ```
-waybar, xwayland-satellite, swww-daemon, mako
+noctalia, xwayland-satellite
 ```
 
 **Wichtige Keybindings:**
@@ -159,23 +244,165 @@ waybar, xwayland-satellite, swww-daemon, mako
 | Tastenkombination | Aktion |
 |-------------------|--------|
 | `Mod+T` | Terminal (Kitty) |
-| `Mod+Space` | App-Launcher (Fuzzel) |
+| `Mod+Space` | App-Launcher (Noctalia) |
 | `Mod+Q` | Fenster schließen |
 | `Mod+F` | Maximieren |
 | `Mod+Shift+F` | Fullscreen |
+| `Mod+O` | Overview |
 | `Mod+1-9` | Workspace wechseln |
 | `Mod+H/J/K/L` | Fokus ändern (vim-style) |
 | `Mod+Ctrl+H/J/K/L` | Fenster verschieben |
 | `Mod+Shift+E` | Niri beenden |
-| `Super+Alt+L` | Bildschirm sperren |
 | `Super+Shift+B` | Browser öffnen |
 | `Print` | Screenshot |
+
+**Noctalia-Keybindings:**
+
+| Tastenkombination | Aktion | Kommando |
+|-------------------|--------|----------|
+| `Mod+Space` | Launcher | `noctalia msg panel-toggle launcher` |
+| `Super+Alt+L` | Bildschirm sperren | `noctalia msg session lock` |
+| `Mod+X` | Sitzungs-/Power-Menü | `noctalia msg panel-toggle session` |
+| `Mod+N` | Control Center | `noctalia msg panel-toggle control-center` |
+| `Mod+Ctrl+V` | Zwischenablage-Verlauf | `noctalia msg panel-toggle clipboard` |
+| `Mod+P` | Hintergrundbild auswählen | `noctalia msg panel-toggle wallpaper` |
+| `Mod+F1` | Tastenkürzel-Spickzettel | `noctalia msg panel-toggle kenn/keybind-cheatsheet:cheatsheet` |
+| `Mod+Shift+F1` | Spickzettel neu einlesen | `noctalia msg plugin kenn/keybind-cheatsheet:data all refresh` |
+| `Mod+Alt+K` | niri Hotkey-Overlay (Fallback) | `show-hotkey-overlay` |
+
+`Mod+V`/`Mod+Shift+V` sind durch die Floating-Aktionen belegt, deshalb liegt die
+Zwischenablage auf `Mod+Ctrl+V`. Lautstärke-, Mikrofon-, Medien- und
+Helligkeitstasten bleiben bewusst direkt auf `wpctl`/`playerctl`/`brightnessctl`
+— Noctalias OSD zeigt die Änderung trotzdem an, die Hardwaretasten funktionieren
+aber auch, wenn Noctalia gerade nicht läuft.
 
 **Window Rules:**
 - Kitty: 90% Transparenz
 - Brave: 95% Transparenz
 - Inaktive Fenster: 85% Transparenz
 - Picture-in-Picture: Floating
+- `dev.noctalia.Noctalia` (Einstellungsfenster): Floating, 1080x920
+
+**Layer Rules (Noctalia):**
+- `^noctalia-(bar-…|notification|dock|panel|attached-panel|osd)$`: `background-effect { xray false }`
+- `noctalia-window-switcher`: `background-effect { blur true; xray false }`
+- `^noctalia-backdrop`: `place-within-backdrop true` (Hintergrundbild bleibt in der Overview sichtbar)
+
+> **niri ≥ 26.04 erforderlich.** `background-effect` bzw. das Protokoll
+> `ext-background-effect` gibt es erst ab niri 26.04. Ein älterer Compositor
+> lehnt die beiden Blöcke ab und **startet nicht**. Dann die betroffenen
+> `layer-rule`-Blöcke in `home/niri-config.kdl` mit `/-` davor auskommentieren,
+> bis ein `nix flake update` niri 26.04 gebracht hat. `place-within-backdrop`
+> braucht nur niri ≥ 25.05.
+
+**Debug:**
+```kdl
+debug {
+    honor-xdg-activation-with-invalid-serial
+}
+```
+Noctalia löst Fensteraktivierung teils ohne gültiges Serial aus (z. B. Klick auf
+eine Benachrichtigungsaktion). Ohne diese Zeile ignoriert niri solche Anfragen.
+
+---
+
+## Noctalia
+
+Noctalia ist die komplette Wayland-Shell und ersetzt den bisherigen Stack
+vollständig:
+
+| Früher | Jetzt |
+|--------|-------|
+| Waybar | Noctalia Bar (`[bar.main]`) |
+| Fuzzel | Noctalia Launcher |
+| mako | Noctalia Notification-Daemon |
+| swaylock-effects | Noctalia Lockscreen (PAM) |
+| wlogout | Noctalia Session-Panel |
+| swww + waypaper | Noctalia Wallpaper |
+| swayidle | Noctalia Idle |
+| — | Clipboard-Verlauf, OSD, Polkit-Agent, Tray |
+
+### Version: v5, nicht v4
+
+Diese Konfiguration nutzt **Noctalia v5 — die native C++-Shell**. Das ist
+**nicht** das ältere quickshell-basierte v4.
+
+> **Wichtig bei der Recherche:** Die meisten Suchtreffer und Blogposts zeigen
+> weiterhin v4. Alles, was dort steht, gilt hier **nicht**:
+> - v4-IPC (`noctalia-shell ipc call …`) → v5 nutzt `noctalia msg …`
+> - v4-Einstellungen im JSON-Format → v5 nutzt TOML
+
+### Konfiguration
+
+Die Laufzeitkonfiguration liegt in `~/.config/noctalia/config.toml` und wird
+deklarativ aus `home/modules/noctalia.nix` erzeugt (`programs.noctalia.settings`).
+`validateConfig = true` lässt `noctalia config validate` schon zur Bauzeit
+laufen, damit Schema-Fehler nicht erst in einer kaputten Session auffallen.
+
+Gestartet wird Noctalia über `spawn-at-startup "noctalia"` in
+`home/niri-config.kdl`, **nicht** über eine systemd-Unit (`systemd.enable = false`).
+
+Wesentliche Einstellungen:
+
+| Bereich | Wert |
+|---------|------|
+| Bar | oben, 32 px, `capsule`, `background_opacity = 0.85`, volle Breite, Platz reserviert |
+| Bar links / mitte | `workspaces` / `clock` |
+| Bar rechts | `tray`, `notifications`, `volume`, `network`, `bluetooth`, `battery`, `power_profile`, `control-center`, `session` |
+| Notifications | Daemon aktiv |
+| OSD | oben rechts |
+| Lockscreen | aktiv, `blurred_desktop`, Blur 0.5 / Tint 0.3 |
+| Idle | Timeouts gesetzt (600 s / 660 s), aber **deaktiviert** |
+| Wallpaper | aktiv, `fill_mode = "crop"`, Bild identisch zu `stylix.image` |
+| Polkit-Agent | aktiv (deshalb darf kein zweiter Agent laufen) |
+| Telemetrie | aus |
+
+> **Der Bar-Name ist der Layer-Namespace.** `[bar.main]` erzeugt den
+> Layer-Shell-Namespace `noctalia-bar-main`. Die `layer-rule` in
+> `home/niri-config.kdl` matcht genau darauf — Umbenennen bricht die Regel.
+
+### Footgun: Laufzeit-Overrides schlagen die Nix-Konfiguration
+
+Ändert man etwas in Noctalias **GUI**, schreibt die Shell den Wert nach
+
+```
+~/.local/state/noctalia/settings.toml
+```
+
+Diese Datei **gewinnt gegenüber** der von Nix erzeugten
+`~/.config/noctalia/config.toml`.
+
+Wenn eine deklarative Änderung nach `nixos-rebuild switch` also **keine Wirkung**
+zeigt: zuerst diese Datei löschen und Noctalia neu starten.
+
+```bash
+rm ~/.local/state/noctalia/settings.toml
+```
+
+Das ist die mit Abstand häufigste Ursache für „das Nix-Setting wird ignoriert".
+
+### Cheatsheet-Plugin
+
+Das Plugin `kenn/keybind-cheatsheet` stammt aus dem Repo
+`noctalia-dev/community-plugins` und ist in `home/modules/noctalia.nix` per
+`fetchFromGitHub` auf einen **festen Commit gepinnt**. Es wird über
+`xdg.dataFile` nach
+
+```
+~/.local/share/noctalia/plugins/keybind-cheatsheet/
+```
+
+gelegt — ins **Daten**-, nicht ins Config-Verzeichnis. Noctalia scannt dort nur
+**eine** Verzeichnisebene tief, das Layout muss also flach sein. Aktiviert wird
+das Plugin über seine Manifest-ID in `plugins.enabled`, nicht über den
+Verzeichnisnamen. Automatisches Nachladen aus dem Netz ist abgeschaltet
+(`auto_update = false`, beide Default-Quellen `enabled = false`).
+
+`Mod+Shift+F1` existiert, weil das Plugin `~/.config/niri/config.kdl` genau
+**einmal beim Laden** einliest und keinen Datei-Watcher hat. Dieser Pfad ist bei
+uns ein schreibgeschützter Symlink in den Nix-Store, den jedes
+`nixos-rebuild switch` unter dem laufenden Plugin austauscht — deshalb nach
+jedem Rebuild einmal manuell neu einlesen.
 
 ---
 
@@ -194,21 +421,123 @@ sudo nixos-rebuild test --flake .#LT-nixos
 nix flake update
 ```
 
-### Neues Modul hinzufügen
+### Neues NixOS-Modul hinzufügen
 
 1. Datei in `modules/` erstellen
-2. In `flake.nix` unter `modules` importieren
+2. In `flake.nix` einbinden:
+   - für **beide** Hosts: in die Modulliste innerhalb von `mkHost`
+   - nur für **einen** Host: in dessen `extraModules` (wie `./modules/gaming.nix`
+     bei `LT-nixos`)
+
+### Neues Home-Manager-Modul hinzufügen
+
+1. Datei in `home/modules/` erstellen (ganz normales HM-Modul mit der Signatur
+   `{ config, pkgs, lib, ... }:`)
+2. In `home/default.nix` unter `imports` eintragen
 
 ### Neues Paket hinzufügen
 
 - **System-weit:** In `configuration.nix` unter `environment.systemPackages`
-- **User-spezifisch:** In `home/home.nix` unter `home.packages`
+- **User-spezifisch:** In `home/modules/packages.nix` unter `home.packages`
+
+---
+
+## Migration / Erste Schritte
+
+Ablauf für den ersten Build nach dem Umstieg von Waybar auf Noctalia v5.
+
+### 1. Flake aktualisieren (Pflicht)
+
+```bash
+nix flake update
+```
+
+Notwendig aus zwei Gründen:
+
+- `noctalia` ist ein **neuer Input** und steht noch nicht in `flake.lock`.
+- Der Lock ist rund ein halbes Jahr alt. Für die `background-effect`-Layer-Rules
+  wird **niri ≥ 26.04** gebraucht (siehe oben).
+
+### 2. Bauen
+
+```bash
+sudo nixos-rebuild switch --flake .#LT-nixos
+# bzw. auf dem anderen Gerät:
+sudo nixos-rebuild switch --flake .#zLT-nixos
+```
+
+### 3. Der erste Build schlägt fehl — das ist erwartet
+
+Der Hash des Cheatsheet-Plugins steht in
+**`home/modules/noctalia.nix`, Zeile 39**, im Block `communityPlugins =
+pkgs.fetchFromGitHub { … }` noch auf dem Platzhalter `lib.fakeHash`:
+
+```nix
+communityPlugins = pkgs.fetchFromGitHub {
+  owner = "noctalia-dev";
+  repo  = "community-plugins";
+  rev   = "ee84a9b11e2553a065b63fcc506120b321588c5d";
+  hash  = lib.fakeHash;          # <-- Zeile 39, muss ersetzt werden
+};
+```
+
+Der Build bricht ab mit:
+
+```
+error: hash mismatch in fixed-output derivation ...
+  specified: sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+       got:  sha256-<DER ECHTE WERT>
+```
+
+**Vorgehen:** Den Wert hinter `got:` kopieren, in Zeile 39 statt `lib.fakeHash`
+eintragen (als String, also `hash = "sha256-…";`) und erneut bauen. Danach ist
+der Build reproduzierbar.
+
+### 4. Verifizieren
+
+```bash
+# Bar sichtbar? Layer-Namespace prüfen:
+niri msg layers        # muss "noctalia-bar-main" auflisten
+
+# Benachrichtigung testen:
+notify-send "Test" "Noctalia laeuft"
+```
+
+Checkliste:
+
+- [ ] Die Leiste erscheint oben
+- [ ] `niri msg layers` listet `noctalia-bar-main`
+- [ ] Benachrichtigungen erscheinen
+- [ ] `Mod+Space` öffnet den Launcher
+- [ ] `Mod+F1` öffnet den Spickzettel
+- [ ] `Super+Alt+L` sperrt den Bildschirm
+
+Wenn eine deklarative Einstellung wirkungslos bleibt: siehe
+[Footgun-Abschnitt](#footgun-laufzeit-overrides-schlagen-die-nix-konfiguration)
+— `~/.local/state/noctalia/settings.toml` löschen.
+
+### 5. Rollback
+
+```bash
+# Konfigurationsstand zurücknehmen
+git revert <commit>
+# oder
+git checkout <alter-commit> -- .
+
+# Laufendes System auf die vorige Generation zurücksetzen
+sudo nixos-rebuild switch --rollback
+```
+
+Notfalls im Boot-Menü eine ältere NixOS-Generation auswählen — die alte
+Waybar-Generation bleibt dort verfügbar, bis sie per `nix-collect-garbage`
+entfernt wird.
 
 ---
 
 ## Theming
 
-Das Theming wird komplett über **Stylix** gesteuert. Änderungen in `configuration.nix`:
+Das Theming wird komplett über **Stylix** gesteuert. Stylix bleibt die einzige
+Quelle der Wahrheit. Änderungen in `configuration.nix`:
 
 ```nix
 stylix = {
@@ -219,6 +548,45 @@ stylix = {
 ```
 
 Verfügbare Themes: [base16-schemes](https://github.com/tinted-theming/base16-schemes)
+
+### Noctalia und Stylix
+
+Noctalia bringt eine eigene Theming-Maschinerie mit: Built-in-Paletten,
+Community-Paletten, wallpaper-basiertes matugen-Theming und eine
+Template-Engine, die App-Konfigurationsdateien zur **Laufzeit** schreibt.
+
+Diese Engine ist bewusst **komplett abgeschaltet**:
+
+```nix
+enable_builtin_templates   = false;
+builtin_ids                = [ ];
+enable_community_templates = false;
+community_ids              = [ ];
+```
+
+Grund ist ein konkreter Konflikt: Stylix schreibt App-Theme-Dateien zur
+**Bauzeit** als schreibgeschützte Symlinks in den Nix-Store (z. B.
+`~/.config/kitty/…`). Noctalias Template-Engine würde exakt dieselben Dateien
+zur Laufzeit überschreiben wollen. Das schlägt entweder fehl (der Store ist
+read-only) oder zerstört den deklarativen Zustand.
+
+Stattdessen gibt es **genau einen Berührungspunkt**: `home/modules/theming.nix`.
+Dort werden die base16-Farben aus Stylix (`config.lib.stylix.colors.withHashtag`)
+zur Eval-Zeit in Noctalias 16 Material-Farbrollen übersetzt und als
+Custom-Palette abgelegt:
+
+```
+programs.noctalia.customPalettes.Stylix
+  -> ~/.config/noctalia/palettes/Stylix.json
+```
+
+Der Attributname `Stylix` muss exakt dem `theme.custom_palette = "Stylix"` in
+`home/modules/noctalia.nix` entsprechen. Bei fehlender oder ungültiger Datei
+fällt Noctalia **stillschweigend** auf seine eingebaute Palette zurück — der
+Fehler ist dann nur optisch sichtbar, nicht als Build-Fehler.
+
+Wird das base16-Schema in `configuration.nix` getauscht, wandert die Änderung
+automatisch bis in die Shell mit.
 
 ---
 
@@ -252,34 +620,31 @@ sudo nixos-generate-config --show-hardware-config > hosts/NEUER-HOST-hardware.ni
 
 ### 4. Host in `flake.nix` hinzufügen
 
-Füge eine neue `nixosConfigurations` hinzu:
+Es wird **kein** kompletter `nixosConfigurations.<name>`-Block mehr kopiert.
+Stattdessen kommt ein neuer Aufruf des `mkHost`-Konstruktors in den
+`nixosConfigurations`-Block:
 
 ```nix
-nixosConfigurations.NEUER-HOST = nixpkgs.lib.nixosSystem {
-  system = "x86_64-linux";  # oder "aarch64-linux" für ARM
+nixosConfigurations = {
+  # ... bestehende Hosts ...
 
-  modules = [
-    ./configuration.nix
-    ./hosts/NEUER-HOST-hardware.nix
+  NEUER-HOST = mkHost {
+    hostName = "NEUER-HOST";
+    hardware = ./hosts/NEUER-HOST-hardware.nix;
 
-    # Module nach Bedarf hinzufügen/entfernen:
-    # ./modules/nvidia.nix      # Nur bei NVIDIA GPU
-    ./modules/gaming.nix        # Gaming-Pakete
-
-    stylix.nixosModules.stylix
-
-    { networking.hostName = "NEUER-HOST"; }
-
-    home-manager.nixosModules.home-manager
-    {
-      home-manager.useGlobalPkgs       = true;
-      home-manager.useUserPackages     = true;
-      home-manager.users.jean          = import ./home/home.nix;
-      home-manager.backupFileExtension = "backup";
-    }
-  ];
+    # Nur host-spezifische Zusatzmodule, alles Gemeinsame steckt in mkHost:
+    extraModules = [ ./modules/gaming.nix ];
+  };
 };
 ```
+
+`mkHost` bindet für jeden Host automatisch ein: `configuration.nix`, die
+Hardware-Datei, `modules/nvidia.nix`, Stylix, den Hostnamen sowie Home-Manager
+inklusive Noctalia-Modul und `home/default.nix`.
+
+Alles, was auf **allen** Hosts gelten soll, gehört in die Modulliste **innerhalb**
+von `mkHost` — nicht in `extraModules`. Das ist genau der Grund für den
+Konstruktor: Änderungen können nicht mehr versehentlich nur in einem Host landen.
 
 ### 5. Hardware-spezifische Anpassungen
 
@@ -287,11 +652,11 @@ Je nach Hardware musst du Module anpassen:
 
 | Hardware | Aktion |
 | -------- | ------ |
-| **NVIDIA GPU** | `./modules/nvidia.nix` hinzufügen |
-| **AMD GPU** | Neues `modules/amd.nix` erstellen oder weglassen (mesa default) |
-| **Intel GPU** | Kein extra Modul nötig |
-| **Laptop** | Batterie/Power-Management ist bereits in `configuration.nix` |
-| **Desktop** | Batterie-Modul in Waybar ggf. entfernen |
+| **NVIDIA GPU** | Nichts zu tun — `./modules/nvidia.nix` steckt bereits in `mkHost` |
+| **AMD GPU** | `./modules/nvidia.nix` aus `mkHost` herausziehen und in die `extraModules` der NVIDIA-Hosts verschieben; ggf. `modules/amd.nix` anlegen (mesa reicht meist) |
+| **Intel GPU** | Wie AMD: nvidia.nix aus der gemeinsamen Liste nehmen |
+| **Laptop** | Batterie/Power-Management ist bereits in `configuration.nix` (`upower`, `power-profiles-daemon`) |
+| **Desktop** | `"battery"` (und ggf. `"power_profile"`) aus `bar.main.end` in `home/modules/noctalia.nix` entfernen |
 
 ### 6. System bauen und aktivieren
 
@@ -299,9 +664,15 @@ Je nach Hardware musst du Module anpassen:
 # Ins Konfigurationsverzeichnis wechseln
 cd ~/nixos-config
 
+# Flake aktualisieren (noctalia-Input, niri >= 26.04)
+nix flake update
+
 # System bauen (ersetze NEUER-HOST mit deinem Hostnamen)
 sudo nixos-rebuild switch --flake .#NEUER-HOST
 ```
+
+Hinweis: Falls der Plugin-Hash noch auf `lib.fakeHash` steht, siehe
+[Migration / Erste Schritte](#migration--erste-schritte).
 
 ### 7. Neustart und Verifizierung
 
@@ -311,7 +682,8 @@ sudo reboot
 
 # Nach dem Reboot prüfen:
 # - Niri startet automatisch
-# - Waybar zeigt alle Module
+# - Die Noctalia-Leiste erscheint (niri msg layers -> noctalia-bar-main)
+# - Benachrichtigungen funktionieren
 # - Bluetooth/WiFi funktioniert
 # - Gaming-Pakete sind installiert (falls gaming.nix aktiviert)
 ```
@@ -319,10 +691,13 @@ sudo reboot
 ### Checkliste für neues Gerät
 
 - [ ] Hardware-Konfiguration generiert (`hosts/HOSTNAME-hardware.nix`)
-- [ ] Host in `flake.nix` hinzugefügt
+- [ ] Host über `mkHost` in `flake.nix` hinzugefügt
 - [ ] GPU-Modul korrekt (nvidia/amd/intel)
+- [ ] `nix flake update` gelaufen (niri ≥ 26.04)
+- [ ] Plugin-Hash in `home/modules/noctalia.nix` eingetragen
 - [ ] `nixos-rebuild switch` erfolgreich
-- [ ] Niri/Waybar funktioniert
+- [ ] Niri startet, Noctalia-Leiste sichtbar
+- [ ] Launcher (`Mod+Space`) und Lockscreen (`Super+Alt+L`) funktionieren
 - [ ] Bluetooth verbindet Geräte
 - [ ] Audio funktioniert (PipeWire)
 - [ ] Änderungen committed und gepusht
