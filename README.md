@@ -454,9 +454,19 @@ nix flake update
 
 Notwendig aus zwei Gründen:
 
-- `noctalia` ist ein **neuer Input** und steht noch nicht in `flake.lock`.
+- `noctalia` ist ein **neuer Input** und muss in `flake.lock`. Nix trägt einen
+  fehlenden Input zwar beim Bauen selbst nach — aber eben nur den neuen.
 - Der Lock ist rund ein halbes Jahr alt. Für die `background-effect`-Layer-Rules
   wird **niri ≥ 26.04** gebraucht (siehe oben).
+
+> **Nicht `nixos-rebuild --upgrade` verwenden.** Das aktualisiert die alten
+> Channels und hat auf ein Flake-System keinerlei Wirkung. Inputs werden
+> ausschließlich über `nix flake update` (alle) bzw.
+> `nix flake update <input>` (einzeln) aktualisiert.
+
+Ob das Update gegriffen hat, sieht man am Generationsnamen nach dem Bauen:
+`nixos-system-LT-nixos-26.05.<DATUM>.<rev>` — steht dort noch ein altes Datum,
+lief der Build gegen den alten Lock.
 
 ### 2. Bauen
 
@@ -466,34 +476,7 @@ sudo nixos-rebuild switch --flake .#LT-nixos
 sudo nixos-rebuild switch --flake .#zLT-nixos
 ```
 
-### 3. Der erste Build schlägt fehl — das ist erwartet
-
-Der Hash des Cheatsheet-Plugins steht in
-**`home/modules/noctalia.nix`, Zeile 39**, im Block `communityPlugins =
-pkgs.fetchFromGitHub { … }` noch auf dem Platzhalter `lib.fakeHash`:
-
-```nix
-communityPlugins = pkgs.fetchFromGitHub {
-  owner = "noctalia-dev";
-  repo  = "community-plugins";
-  rev   = "ee84a9b11e2553a065b63fcc506120b321588c5d";
-  hash  = lib.fakeHash;          # <-- Zeile 39, muss ersetzt werden
-};
-```
-
-Der Build bricht ab mit:
-
-```
-error: hash mismatch in fixed-output derivation ...
-  specified: sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
-       got:  sha256-<DER ECHTE WERT>
-```
-
-**Vorgehen:** Den Wert hinter `got:` kopieren, in Zeile 39 statt `lib.fakeHash`
-eintragen (als String, also `hash = "sha256-…";`) und erneut bauen. Danach ist
-der Build reproduzierbar.
-
-### 4. Verifizieren
+### 3. Verifizieren
 
 ```bash
 # Bar sichtbar? Layer-Namespace prüfen:
@@ -516,7 +499,7 @@ Wenn eine deklarative Einstellung wirkungslos bleibt: siehe
 [Footgun-Abschnitt](#footgun-laufzeit-overrides-schlagen-die-nix-konfiguration)
 — `~/.local/state/noctalia/settings.toml` löschen.
 
-### 5. Rollback
+### 4. Rollback
 
 ```bash
 # Konfigurationsstand zurücknehmen
@@ -671,7 +654,8 @@ nix flake update
 sudo nixos-rebuild switch --flake .#NEUER-HOST
 ```
 
-Hinweis: Falls der Plugin-Hash noch auf `lib.fakeHash` steht, siehe
+Hinweis: Nicht `nixos-rebuild --upgrade` verwenden — das aktualisiert die alten
+Channels und wirkt auf ein Flake-System nicht. Siehe
 [Migration / Erste Schritte](#migration--erste-schritte).
 
 ### 7. Neustart und Verifizierung

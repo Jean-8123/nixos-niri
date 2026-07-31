@@ -14,29 +14,14 @@ let
   # Im Repo liegt das Plugin flach im Wurzelverzeichnis unter
   # `keybind-cheatsheet/` (kein `plugins/`- und kein `kenn/`-Präfix).
   #
-  # ##########################################################################
-  # ##                                                                      ##
-  # ##   ACHTUNG — HASH MUSS BEIM ERSTEN BUILD VON HAND GESETZT WERDEN      ##
-  # ##                                                                      ##
-  # ##   `hash` steht auf `lib.fakeHash` (Platzhalter aus lauter A's),      ##
-  # ##   weil der echte Hash auf diesem Rechner nicht berechnet werden      ##
-  # ##   konnte (kein Nix verfügbar).                                       ##
-  # ##                                                                      ##
-  # ##   Der ERSTE `nixos-rebuild switch` WIRD FEHLSCHLAGEN, mit:           ##
-  # ##                                                                      ##
-  # ##       error: hash mismatch in fixed-output derivation ...            ##
-  # ##         specified: sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA   ##
-  # ##              got: sha256-<DER ECHTE WERT>                            ##
-  # ##                                                                      ##
-  # ##   Den Wert hinter `got:` KOPIEREN und unten bei `hash =` eintragen,  ##
-  # ##   dann erneut bauen. Danach ist der Build reproduzierbar.            ##
-  # ##                                                                      ##
-  # ##########################################################################
+  # Der Hash gehoert zum oben gepinnten `rev`. Wird `rev` getauscht, muss er
+  # neu ermittelt werden: `hash` auf `lib.fakeHash` setzen, bauen lassen und
+  # den Wert hinter `got:` aus der Fehlermeldung uebernehmen.
   communityPlugins = pkgs.fetchFromGitHub {
     owner = "noctalia-dev";
     repo  = "community-plugins";
     rev   = "ee84a9b11e2553a065b63fcc506120b321588c5d";
-    hash  = lib.fakeHash;
+    hash  = "sha256-CUENVkim4k7byI8mALLi52vo+GMkKHCvUTgu3MxImUM=";
   };
 
   # Wallpaper: dieselbe Datei, die `stylix.image` in configuration.nix nutzt.
