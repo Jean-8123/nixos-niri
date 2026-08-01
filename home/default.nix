@@ -44,5 +44,10 @@
 
     # Wird von Tools wie xdg-open / Editoren als Terminal-Emulator benutzt.
     TERMINAL       = "kitty";
+
+    # Explizit gesetzt, damit Wayland-Apps (PrismLauncher) JAVA_HOME finden.
+    # programs.java setzt dies nur für Login-Shells; hier wird es als
+    # Session-Variable für alle Prozesse der Niri-Session verfügbar gemacht.
+    JAVA_HOME      = "${pkgs.jdk25}";
   };
 }
