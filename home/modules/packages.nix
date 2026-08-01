@@ -10,6 +10,7 @@
   # jetzt selbst mit; ein Parallelbetrieb wäre sogar schädlich, weil Noctalia
   # `org.freedesktop.Notifications` und `org.kde.StatusNotifierWatcher`
   # exklusiv beansprucht.
+  programs.java.package = pkgs.jdk25;
   home.packages = with pkgs; [
     # Browser
     (brave.override { commandLineArgs = "--ozone-platform=wayland"; })
