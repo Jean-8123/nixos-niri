@@ -23,6 +23,7 @@
     lutris-unwrapped     # Wine Gaming Platform
     qbittorrent
     protonvpn-gui
+    prismlauncher
     # Tools
     mangohud             # FPS Overlay & Performance Monitoring
     protonup-qt          # Proton/Wine Version Manager
